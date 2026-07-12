@@ -577,7 +577,7 @@ Use this exact section order and copy in `src/index.template.html`; retain the e
       <section class="chapter" id="uxtu" data-reveal>
         <header class="chapter-heading"><span>03</span><div><h2>UXTU 负压与启动异常</h2><p>-20 是这台电脑的记录值，不是其他设备可以直接照抄的通用值。</p></div></header>
         <div class="media-step"><h3>AMD Curve Optimiser · All Core Offset -20</h3><p>如果出现蓝屏、重启、游戏或应用崩溃，优先恢复默认并重新验证。</p><img data-zoom src="{{asset:uxtu-undervolt}}" alt="UXTU 全核负压负 20 设置"></div>
-        <div class="media-step recovery"><h3>UXTU 没自启，手动打开也没反应</h3><p>删除 AppData\Local\JamesCJ60 下截图红圈所示的 Universal x86 Tuning Utility 配置文件夹；不要误删旁边的压缩包。</p><img data-zoom src="{{asset:uxtu-recovery}}" alt="UXTU 无法启动时需要删除的配置文件夹"></div>
+        <div class="media-step recovery"><h3>UXTU 没自启，手动打开也没反应</h3><p>删除 AppData\Local\JamesCJ60 下截图红圈所示的 Universal x86 Tuning Utility 配置文件夹。删除该文件夹后重新打开 UXTU，并在设置中开启“开机自启”和“开机自启自动应用配置”。</p><img data-zoom src="{{asset:uxtu-recovery}}" alt="UXTU 无法启动时需要删除的配置文件夹"></div>
       </section>
 
       <section class="chapter memory-chapter" id="memory" data-reveal>
@@ -941,8 +941,6 @@ git commit -m "feat: add motion and image zoom"
 - Create: `output/playwright/full-1440.png`
 - Create: `output/playwright/full-1920.png`
 - Create: `output/playwright/full-mobile.png`
-- Create: `output/playwright/memory-stable-full.png`
-- Create: `output/playwright/umaf-full.png`
 
 - [ ] **Step 1: Write validator tests before implementation**
 
@@ -1112,13 +1110,13 @@ Remove-Item -LiteralPath $resolvedOffline -Recurse -Force
 
 Expected: the unique copied `file://` page opens with exactly 10/10 images and two links. Chromium reports `navigator.onLine === true` for local-file documents even in an offline context, so the same captured file DOM is also reloaded into `about:blank` while offline; there `navigator.onLine` must be false with 10/10 images and both links intact. Console remains clean and the Bilibili links are not opened.
 
-- [ ] **Step 11: Open the stable-memory and both UMAF images through the real keyboard lightbox flow**
+- [ ] **Step 11: Verify all evidence images remain static content**
 
 ```powershell
-& 'E:\Git\bin\bash.exe' '/c/Users/lz199/.codex/skills/playwright/scripts/playwright_cli.sh' run-code "const cases = [{ alt: 'ZenTimings 显示的当前稳定内存参数', width: 610, height: 844, shot: 'output/playwright/memory-stable-full.png' }, { alt: 'UMAF DDR SPD Timing 已记录字段', width: 3072, height: 2024, shot: 'output/playwright/umaf-full.png' }, { alt: 'UMAF DDR Non-SPD Timing 已记录字段', width: 3072, height: 1208 }]; for (const item of cases) { const locator = page.getByRole('button', { name: item.alt + '，打开完整大图' }); await locator.focus(); await page.keyboard.press('Space'); await page.waitForFunction(() => { const dialog = document.querySelector('#image-dialog'); const full = dialog?.querySelector('img'); return dialog?.open && full?.complete && full.naturalWidth > 0 && full.naturalHeight > 0; }); const dimensions = await page.locator('#image-dialog img').evaluate((full) => ({ width: full.naturalWidth, height: full.naturalHeight })); if (dimensions.width !== item.width || dimensions.height !== item.height) throw new Error(item.alt + ': ' + JSON.stringify(dimensions)); if (item.shot) await page.screenshot({ path: item.shot }); await page.keyboard.press('Escape'); await page.waitForFunction(() => !document.querySelector('#image-dialog')?.open); }"
+& 'E:\Git\bin\bash.exe' '/c/Users/lz199/.codex/skills/playwright/scripts/playwright_cli.sh' run-code "async page => { const before = page.context().pages().length; const result = await page.evaluate(() => ({ interactiveImages: document.querySelectorAll('img[data-zoom], img[role], img[tabindex]').length, dialogs: document.querySelectorAll('dialog, #image-dialog').length, zoomCursors: [...document.images].filter((image) => getComputedStyle(image).cursor === 'zoom-in').length })); if (result.interactiveImages || result.dialogs || result.zoomCursors) throw new Error(JSON.stringify(result)); await page.getByAltText('ZenTimings 显示的当前稳定内存参数').click(); if (page.context().pages().length !== before || await page.locator('dialog[open]').count()) throw new Error('static image unexpectedly opened a viewer'); }"
 ```
 
-Expected: Space opens each image, the revised UMAF images resolve to 3072 × 2024 and 3072 × 1208, ZenTimings resolves to 610 × 844, screenshots are saved for visual review, and Escape closes the dialog each time.
+Expected: no evidence image has button/link semantics, tabindex, zoom cursor, dialog, popup, or click effect; images remain large static page content.
 
 - [ ] **Step 12: Visually inspect desktop, mobile, and full-size memory screenshots**
 
@@ -1128,8 +1126,6 @@ Use the local image viewer on:
 output/playwright/full-1440.png
 output/playwright/full-1920.png
 output/playwright/full-mobile.png
-output/playwright/memory-stable-full.png
-output/playwright/umaf-full.png
 ```
 
 Acceptance points: no 12px-or-smaller descriptive copy; green text never sits on white imagery; the white hero image ends before the dark metric bar; the mobile hero image shows its full width without cropping; GPU/power and both UMAF evidence pairs are vertically stacked at their original aspect ratios; ZenTimings is visibly the current stable result; UMAF is visibly a partial recovery reference; Bilibili titles and BV numbers are readable; no user-facing build terminology appears.
@@ -1258,6 +1254,73 @@ Expected: the focused test and full suite pass, the revised source images conver
 ```powershell
 git add -- 'assets/source/UMAF内存时序调整1-DDR SPD Timing.jpg' 'assets/source/UMAF内存时序调整2-DDR Non-SPD Timing.jpg' tests/content.test.mjs tests/layout-source.test.mjs src/index.template.html src/styles.css dist/laptop-performance-handoff.html
 git commit -m "fix: refine reference wording and evidence layout"
+```
+
+### Task 9: Remove image-zoom interaction
+
+> Late requirement update: all page images are already large enough. Remove zoom interaction on desktop and mobile before resuming final QA.
+
+**Files:**
+- Modify: `tests/interaction-source.test.mjs`
+- Modify: `src/index.template.html`
+- Modify: `src/styles.css`
+- Modify: `src/client.js`
+- Modify: `dist/laptop-performance-handoff.html`
+
+- [ ] **Step 1: Replace the interaction contract and verify RED**
+
+Update `tests/interaction-source.test.mjs` so it still requires reduced-motion, capture-mode and IntersectionObserver reveal behavior, but asserts all image-viewer behavior is absent:
+
+```js
+test('motion remains accessible while evidence images stay static', async () => {
+  const [client, template, css] = await Promise.all([
+    readFile('src/client.js', 'utf8'),
+    readFile('src/index.template.html', 'utf8'),
+    readFile('src/styles.css', 'utf8'),
+  ]);
+  assert.match(client, /prefers-reduced-motion/);
+  assert.match(client, /IntersectionObserver/);
+  for (const forbidden of [/showModal/, /data-zoom/, /image-dialog/, /window\.open/, /preventDefault/]) {
+    assert.doesNotMatch(client, forbidden);
+  }
+  assert.doesNotMatch(template, /data-zoom|<dialog|image-dialog/);
+  assert.doesNotMatch(css, /cursor:\s*zoom-in|dialog\s*\{|dialog::backdrop/);
+});
+```
+
+Run: `node --test tests/interaction-source.test.mjs`
+
+Expected: FAIL because the current source still contains data-zoom attributes, dialog markup/CSS, and image click/keyboard handlers.
+
+- [ ] **Step 2: Remove viewer markup and image affordances**
+
+- Remove every `data-zoom` attribute from `src/index.template.html`.
+- Remove the complete `#image-dialog` element and close button.
+- Remove `cursor: zoom-in` from evidence image styles and delete all dialog CSS.
+- Keep image sizing, borders, alt text, vertical stacks and original-ratio rules unchanged.
+
+- [ ] **Step 3: Reduce the client script to motion only**
+
+Keep `js-ready`, capture/reduced-motion handling and IntersectionObserver reveal logic in `src/client.js`. Delete image tabindex/role/aria-label mutation, click/keydown handlers, dialog state and Escape/background/close-button logic. Do not replace it with a popup, new tab or custom gesture system.
+
+- [ ] **Step 4: Verify GREEN, rebuild, and run browser checks**
+
+Run:
+
+```powershell
+node --test tests/interaction-source.test.mjs
+npm test
+npm run build
+git diff --check
+```
+
+In Playwright at 1440px and 400px, assert that no image has `data-zoom`, role, tabindex or a zoom cursor; no dialog exists; clicking the ZenTimings image does not open a dialog or a new page. Save updated full-page screenshots and visually confirm image sizes/layouts are unchanged.
+
+- [ ] **Step 5: Commit**
+
+```powershell
+git add tests/interaction-source.test.mjs src/index.template.html src/styles.css src/client.js dist/laptop-performance-handoff.html
+git commit -m "fix: keep evidence images static"
 ```
 
 ---
