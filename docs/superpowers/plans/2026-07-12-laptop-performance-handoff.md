@@ -571,7 +571,7 @@ Use this exact section order and copy in `src/index.template.html`; retain the e
 
       <section class="chapter" id="gpu" data-reveal>
         <header class="chapter-heading"><span>02</span><div><h2>显卡与电源模式</h2><p>保持独显直连，同时让机械革命控制台的高性能电源模式保持关闭。</p></div></header>
-        <div class="media-pair"><figure><img data-zoom src="{{asset:gpu-mode}}" alt="机械革命控制台独显直连设置"><figcaption>显卡模式：独显直连</figcaption></figure><figure><img data-zoom src="{{asset:console-power-mode}}" alt="机械革命控制台高性能电源模式关闭"><figcaption>高性能电源模式保持关闭</figcaption></figure></div>
+        <div class="media-stack"><figure><img data-zoom src="{{asset:gpu-mode}}" alt="机械革命控制台独显直连设置"><figcaption>显卡模式：独显直连</figcaption></figure><figure><img data-zoom src="{{asset:console-power-mode}}" alt="机械革命控制台高性能电源模式关闭"><figcaption>高性能电源模式保持关闭</figcaption></figure></div>
       </section>
 
       <section class="chapter" id="uxtu" data-reveal>
@@ -583,7 +583,7 @@ Use this exact section order and copy in `src/index.template.html`; retain the e
       <section class="chapter memory-chapter" id="memory" data-reveal>
         <header class="chapter-heading"><span>04</span><div><h2>当前稳定内存结果</h2><p>5600 MT/s 已经调整完成并稳定运行，正常情况下保持不动。</p></div></header>
         <div class="stable-result"><div><small>CURRENT STABLE RESULT</small><h3>5600 MT/s 正常保持</h3><p>原装 32GB 单条已经替换为 16GB × 2 双通道。只有发生稳定性问题时，才考虑降频、放宽或回退已记录参数，并逐项验证。</p><p><strong>ZenTimings = 当前 Windows 实际运行结果</strong></p></div><img data-zoom src="{{asset:memory-stable}}" alt="ZenTimings 显示的当前稳定内存参数"></div>
-        <div class="umaf-reference"><header><small>局部回退 / 恢复参考</small><h3>UMAF = 已记录字段的局部参数入口和回退对照</h3><p>两张图只覆盖部分时序与小参数。设置被回退时，只恢复图中明确记录的字段；出现稳定性问题时可逐项放宽，未记录参数不要凭空推断。</p></header><div class="umaf-grid"><figure><img class="umaf-crop" data-zoom src="{{asset:umaf-spd}}" alt="UMAF DDR SPD Timing 已记录字段"><figcaption>DDR SPD Timing · 已记录字段</figcaption></figure><figure><img class="umaf-crop" data-zoom src="{{asset:umaf-non-spd}}" alt="UMAF DDR Non-SPD Timing 已记录字段"><figcaption>DDR Non-SPD Timing · 已记录字段</figcaption></figure></div><p class="umaf-warning">约 80MB 的 UMAF 分区不可删除。开机或重启时持续按 F2，选择最右边第三项，再进入后续界面的第二项；安装与进入方法参见教程 01。</p></div>
+        <div class="umaf-reference"><header><small>局部回退 / 恢复参考</small><h3>UMAF = 已记录字段的局部参数入口和回退对照</h3><p>两张图只覆盖部分时序与小参数。设置被回退时，只恢复图中明确记录的字段；出现稳定性问题时可逐项放宽，未记录参数不要凭空推断。</p></header><div class="umaf-stack"><figure><img class="umaf-image" data-zoom src="{{asset:umaf-spd}}" alt="UMAF DDR SPD Timing 已记录字段"><figcaption>DDR SPD Timing · 已记录字段</figcaption></figure><figure><img class="umaf-image" data-zoom src="{{asset:umaf-non-spd}}" alt="UMAF DDR Non-SPD Timing 已记录字段"><figcaption>DDR Non-SPD Timing · 已记录字段</figcaption></figure></div><p class="umaf-warning">约 80MB 的 UMAF 分区不可删除。开机或重启时持续按 F2，选择最右边第三项，再进入后续界面的第二项；安装与进入方法参见教程 01。</p></div>
       </section>
 
       <section class="chapter" id="future" data-reveal>
@@ -726,8 +726,8 @@ h1 { max-width: 6em; margin: 3.8rem 0 1.5rem; font-size: clamp(4rem, 6vw, 7.2rem
 .media-step { margin-top: 4.5rem; }
 .media-step h3 { margin: 0 0 .5rem; font-size: 1.8rem; }
 .media-step p { max-width: 52rem; margin: 0 0 1.25rem; color: var(--muted); }
-.media-step img, .media-pair img { width: 100%; border: 1px solid var(--line); background: var(--surface); cursor: zoom-in; }
-.media-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1.75rem; }
+.media-step img, .media-stack img { width: 100%; border: 1px solid var(--line); background: var(--surface); cursor: zoom-in; }
+.media-stack { display: grid; grid-template-columns: 1fr; gap: 2.5rem; }
 figure { margin: 0; }
 figcaption { padding-top: .8rem; color: var(--muted); font-size: var(--font-note); }
 .stable-result { display: grid; grid-template-columns: 1fr minmax(22rem, .55fr); gap: 3rem; align-items: center; padding: 3rem; border-block: 2px solid var(--acid); background: linear-gradient(135deg, #111119, #0a0a0d); }
@@ -738,8 +738,8 @@ figcaption { padding-top: .8rem; color: var(--muted); font-size: var(--font-note
 .umaf-reference header { max-width: 58rem; }
 .umaf-reference h3 { margin: .7rem 0; font-size: 2rem; }
 .umaf-reference header p, .umaf-warning { color: var(--muted); }
-.umaf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.75rem; margin-top: 2rem; }
-.umaf-crop { width: 100%; height: 34rem; object-fit: cover; object-position: top; cursor: zoom-in; border: 1px solid var(--line); }
+.umaf-stack { display: grid; grid-template-columns: 1fr; gap: 2.5rem; margin-top: 2rem; }
+.umaf-image { width: 100%; height: auto; object-fit: contain; cursor: zoom-in; border: 1px solid var(--line); }
 .umaf-warning { margin-top: 2rem; padding: 1.3rem 1.5rem; border-left: 4px solid var(--danger); background: #171216; }
 .future-grid { display: grid; grid-template-columns: .75fr 1.25fr; gap: 2rem; }
 .temperature { min-height: 23rem; padding: 2.5rem; display: flex; flex-direction: column; justify-content: space-between; background: var(--violet); color: #0a0a0c; }
@@ -767,10 +767,11 @@ html[data-capture="true"] *, html[data-capture="true"] *::before, html[data-capt
   .topbar > div { display: none; }
   .hero { grid-template-columns: 1fr; }
   .hero-copy { height: auto; padding-block: 5rem; }
-  .hero-media { height: 30rem; }
+  .hero-media { height: auto; }
+  .hero-media img { height: auto; object-fit: contain; }
   .hero-metrics, .baseline-grid { grid-template-columns: 1fr 1fr; }
   .chapter-heading { grid-template-columns: 1fr; }
-  .tutorial, .media-pair, .stable-result, .umaf-grid, .future-grid, .tools-list { grid-template-columns: 1fr; }
+  .tutorial, .stable-result, .future-grid, .tools-list { grid-template-columns: 1fr; }
   .stable-result { padding: 2rem 1.5rem; }
 }
 @media print {
@@ -1052,8 +1053,11 @@ Expected: the command remains active and prints `http://127.0.0.1:4173/?capture=
 
 - [ ] **Step 7: Verify 1440px capture mode in Playwright CLI**
 
+Current `@playwright/cli` requires each `run-code` payload to be wrapped as an `async page => { ... }` function. Set `PLAYWRIGHT_MCP_ALLOW_UNRESTRICTED_FILE_ACCESS=true` before the first `open` so the later audited `file://` check is allowed.
+
 ```powershell
 New-Item -ItemType Directory -Force -Path 'output\playwright' | Out-Null
+$env:PLAYWRIGHT_MCP_ALLOW_UNRESTRICTED_FILE_ACCESS = 'true'
 & 'E:\Git\bin\bash.exe' '/c/Users/lz199/.codex/skills/playwright/scripts/playwright_cli.sh' open 'http://127.0.0.1:4173/?capture=1' --headed
 & 'E:\Git\bin\bash.exe' '/c/Users/lz199/.codex/skills/playwright/scripts/playwright_cli.sh' resize 1440 900
 & 'E:\Git\bin\bash.exe' '/c/Users/lz199/.codex/skills/playwright/scripts/playwright_cli.sh' run-code "await page.waitForFunction(() => { const images = [...document.querySelectorAll('img[src]')]; return images.length === 10 && images.every((image) => image.complete && image.naturalWidth > 0); }); await page.screenshot({path: 'output/playwright/full-1440.png', fullPage: true});"
@@ -1091,24 +1095,23 @@ $offline = Join-Path $env:TEMP ('laptop-handoff-offline-check-' + [Guid]::NewGui
 New-Item -ItemType Directory -Force -Path $offline | Out-Null
 Copy-Item -LiteralPath 'dist\laptop-performance-handoff.html' -Destination (Join-Path $offline 'handoff.html') -Force
 $offlineUrl = ([System.Uri]::new((Join-Path $offline 'handoff.html'))).AbsoluteUri + '?capture=1'
-& 'E:\Git\bin\bash.exe' '/c/Users/lz199/.codex/skills/playwright/scripts/playwright_cli.sh' run-code "await page.context().setOffline(true); await page.goto('$offlineUrl'); const result = await page.evaluate(() => { const images = [...document.querySelectorAll('img[src]')]; return { online: navigator.onLine, count: images.length, loaded: images.filter((image) => image.complete && image.naturalWidth > 0).length }; }); if (result.online || result.count !== 10 || result.loaded !== 10) throw new Error(JSON.stringify(result));"
+& 'E:\Git\bin\bash.exe' '/c/Users/lz199/.codex/skills/playwright/scripts/playwright_cli.sh' run-code "async page => { await page.context().setOffline(true); await page.goto('$offlineUrl'); const fileHtml = await page.content(); const fileResult = await page.evaluate(() => { const images = [...document.querySelectorAll('img[src]')]; return { count: images.length, loaded: images.filter((image) => image.complete && image.naturalWidth > 0).length, links: document.querySelectorAll('a[href]').length }; }); if (fileResult.count !== 10 || fileResult.loaded !== 10 || fileResult.links !== 2) throw new Error('file: ' + JSON.stringify(fileResult)); await page.goto('about:blank'); await page.setContent(fileHtml, { waitUntil: 'load' }); const offlineResult = await page.evaluate(() => { const images = [...document.querySelectorAll('img[src]')]; return { online: navigator.onLine, count: images.length, loaded: images.filter((image) => image.complete && image.naturalWidth > 0).length, links: document.querySelectorAll('a[href]').length }; }); if (offlineResult.online || offlineResult.count !== 10 || offlineResult.loaded !== 10 || offlineResult.links !== 2) throw new Error('offline: ' + JSON.stringify(offlineResult)); await page.context().setOffline(false); await page.goto('http://127.0.0.1:4173/?capture=1'); }"
 & 'E:\Git\bin\bash.exe' '/c/Users/lz199/.codex/skills/playwright/scripts/playwright_cli.sh' console
-& 'E:\Git\bin\bash.exe' '/c/Users/lz199/.codex/skills/playwright/scripts/playwright_cli.sh' run-code "await page.context().setOffline(false); await page.goto('http://127.0.0.1:4173/?capture=1');"
 $resolvedOffline = (Resolve-Path -LiteralPath $offline).Path
 $resolvedTemp = (Resolve-Path -LiteralPath $env:TEMP).Path.TrimEnd('\')
 if (-not $resolvedOffline.StartsWith($resolvedTemp + '\laptop-handoff-offline-check-', [StringComparison]::OrdinalIgnoreCase)) { throw "Unexpected cleanup path: $resolvedOffline" }
 Remove-Item -LiteralPath $resolvedOffline -Recurse -Force
 ```
 
-Expected: `navigator.onLine` is false, the copied file opens with exactly 10/10 images and no console errors or warnings, and no network is needed for page resources. The two Bilibili links remain visible but are not opened.
+Expected: the unique copied `file://` page opens with exactly 10/10 images and two links. Chromium reports `navigator.onLine === true` for local-file documents even in an offline context, so the same captured file DOM is also reloaded into `about:blank` while offline; there `navigator.onLine` must be false with 10/10 images and both links intact. Console remains clean and the Bilibili links are not opened.
 
 - [ ] **Step 11: Open the stable-memory and both UMAF images through the real keyboard lightbox flow**
 
 ```powershell
-& 'E:\Git\bin\bash.exe' '/c/Users/lz199/.codex/skills/playwright/scripts/playwright_cli.sh' run-code "const cases = [{ alt: 'ZenTimings 显示的当前稳定内存参数', width: 610, height: 844, shot: 'output/playwright/memory-stable-full.png' }, { alt: 'UMAF DDR SPD Timing 已记录字段', width: 3072, height: 4096, shot: 'output/playwright/umaf-full.png' }, { alt: 'UMAF DDR Non-SPD Timing 已记录字段', width: 3072, height: 4096 }]; for (const item of cases) { const locator = page.getByRole('button', { name: item.alt + '，打开完整大图' }); await locator.focus(); await page.keyboard.press('Space'); await page.waitForFunction(() => { const dialog = document.querySelector('#image-dialog'); const full = dialog?.querySelector('img'); return dialog?.open && full?.complete && full.naturalWidth > 0 && full.naturalHeight > 0; }); const dimensions = await page.locator('#image-dialog img').evaluate((full) => ({ width: full.naturalWidth, height: full.naturalHeight })); if (dimensions.width !== item.width || dimensions.height !== item.height) throw new Error(item.alt + ': ' + JSON.stringify(dimensions)); if (item.shot) await page.screenshot({ path: item.shot }); await page.keyboard.press('Escape'); await page.waitForFunction(() => !document.querySelector('#image-dialog')?.open); }"
+& 'E:\Git\bin\bash.exe' '/c/Users/lz199/.codex/skills/playwright/scripts/playwright_cli.sh' run-code "const cases = [{ alt: 'ZenTimings 显示的当前稳定内存参数', width: 610, height: 844, shot: 'output/playwright/memory-stable-full.png' }, { alt: 'UMAF DDR SPD Timing 已记录字段', width: 3072, height: 2024, shot: 'output/playwright/umaf-full.png' }, { alt: 'UMAF DDR Non-SPD Timing 已记录字段', width: 3072, height: 1208 }]; for (const item of cases) { const locator = page.getByRole('button', { name: item.alt + '，打开完整大图' }); await locator.focus(); await page.keyboard.press('Space'); await page.waitForFunction(() => { const dialog = document.querySelector('#image-dialog'); const full = dialog?.querySelector('img'); return dialog?.open && full?.complete && full.naturalWidth > 0 && full.naturalHeight > 0; }); const dimensions = await page.locator('#image-dialog img').evaluate((full) => ({ width: full.naturalWidth, height: full.naturalHeight })); if (dimensions.width !== item.width || dimensions.height !== item.height) throw new Error(item.alt + ': ' + JSON.stringify(dimensions)); if (item.shot) await page.screenshot({ path: item.shot }); await page.keyboard.press('Escape'); await page.waitForFunction(() => !document.querySelector('#image-dialog')?.open); }"
 ```
 
-Expected: Space opens each image, both UMAF images resolve to the complete 3072 × 4096 source, ZenTimings resolves to 610 × 844, screenshots are saved for visual review, and Escape closes the dialog each time.
+Expected: Space opens each image, the revised UMAF images resolve to 3072 × 2024 and 3072 × 1208, ZenTimings resolves to 610 × 844, screenshots are saved for visual review, and Escape closes the dialog each time.
 
 - [ ] **Step 12: Visually inspect desktop, mobile, and full-size memory screenshots**
 
@@ -1122,7 +1125,7 @@ output/playwright/memory-stable-full.png
 output/playwright/umaf-full.png
 ```
 
-Acceptance points: no 12px-or-smaller descriptive copy; green text never sits on white imagery; the white hero image ends before the dark metric bar; ZenTimings is visibly the current stable result; UMAF is visibly a partial recovery reference; Bilibili titles and BV numbers are readable; no user-facing build terminology appears.
+Acceptance points: no 12px-or-smaller descriptive copy; green text never sits on white imagery; the white hero image ends before the dark metric bar; the mobile hero image shows its full width without cropping; GPU/power and both UMAF evidence pairs are vertically stacked at their original aspect ratios; ZenTimings is visibly the current stable result; UMAF is visibly a partial recovery reference; Bilibili titles and BV numbers are readable; no user-facing build terminology appears.
 
 - [ ] **Step 13: Stop the server and Playwright browser**
 
@@ -1153,6 +1156,90 @@ Commit:
 ```powershell
 git add package.json package-lock.json scripts src tests assets/source dist/laptop-performance-handoff.html
 git commit -m "feat: deliver laptop performance handoff page"
+```
+
+### Task 8: Revised evidence stacks and uncropped mobile hero
+
+> Late requirement update: execute this task before resuming Task 7 browser QA.
+
+**Files:**
+- Modify: `assets/source/UMAF内存时序调整1-DDR SPD Timing.jpg`
+- Modify: `assets/source/UMAF内存时序调整2-DDR Non-SPD Timing.jpg`
+- Modify: `tests/layout-source.test.mjs`
+- Modify: `src/index.template.html`
+- Modify: `src/styles.css`
+- Modify: `dist/laptop-performance-handoff.html`
+
+- [ ] **Step 1: Write the failing media-layout regression contract**
+
+Add `import sharp from 'sharp';` and this test to `tests/layout-source.test.mjs`:
+
+```js
+test('evidence images stack vertically at their original ratios and the mobile hero is uncropped', async () => {
+  const [css, template] = await Promise.all([
+    readFile('src/styles.css', 'utf8'),
+    readFile('src/index.template.html', 'utf8'),
+  ]);
+
+  assert.match(template, /class="media-stack"/);
+  assert.match(template, /class="umaf-stack"/);
+  assert.equal((template.match(/class="umaf-image"/g) ?? []).length, 2);
+  assert.doesNotMatch(template, /media-pair|umaf-grid|umaf-crop/);
+  assert.match(css, /\.media-stack\s*\{[^}]*grid-template-columns:\s*1fr/);
+  assert.match(css, /\.umaf-stack\s*\{[^}]*grid-template-columns:\s*1fr/);
+  assert.match(css, /\.umaf-image\s*\{[^}]*height:\s*auto;[^}]*object-fit:\s*contain/);
+  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.hero-media\s*\{\s*height:\s*auto;\s*\}[\s\S]*?\.hero-media img\s*\{[^}]*height:\s*auto;[^}]*object-fit:\s*contain/);
+
+  const [spd, nonSpd] = await Promise.all([
+    sharp('assets/source/UMAF内存时序调整1-DDR SPD Timing.jpg').metadata(),
+    sharp('assets/source/UMAF内存时序调整2-DDR Non-SPD Timing.jpg').metadata(),
+  ]);
+  assert.deepEqual([spd.width, spd.height], [3072, 2024]);
+  assert.deepEqual([nonSpd.width, nonSpd.height], [3072, 1208]);
+});
+```
+
+- [ ] **Step 2: Run the test and verify RED**
+
+Run: `node --test tests/layout-source.test.mjs`
+
+Expected: FAIL because the existing template still uses horizontal pair/grid classes and the mobile hero uses a fixed-height cover crop.
+
+- [ ] **Step 3: Update the semantic media wrappers**
+
+In `src/index.template.html`:
+
+- Rename the GPU/power wrapper from `media-pair` to `media-stack` while preserving GPU first and power mode second.
+- Rename the UMAF wrapper from `umaf-grid` to `umaf-stack` while preserving SPD first and Non-SPD second.
+- Rename both UMAF image classes from `umaf-crop` to `umaf-image`.
+
+- [ ] **Step 4: Implement full-ratio vertical layout and the mobile hero fix**
+
+In `src/styles.css`:
+
+- Make `.media-stack` and `.umaf-stack` single-column grids at every viewport.
+- Give `.umaf-image` `width: 100%`, `height: auto`, and `object-fit: contain`; remove fixed-height cropping and `object-position`.
+- Under `@media (max-width: 900px)`, set `.hero-media` to `height: auto` and `.hero-media img` to `height: auto; object-fit: contain` so the square product image is never horizontally cropped.
+- Remove the obsolete stack classes from the responsive grid-flattening selector.
+
+- [ ] **Step 5: Verify GREEN, rebuild, and run the project suite**
+
+Run:
+
+```powershell
+node --test tests/layout-source.test.mjs
+npm test
+npm run build
+git diff --check
+```
+
+Expected: the focused test and full suite pass, the revised source images convert pixel-identically at 3072 × 2024 and 3072 × 1208, and the standalone HTML is rebuilt.
+
+- [ ] **Step 6: Commit only the late media revision**
+
+```powershell
+git add -- 'assets/source/UMAF内存时序调整1-DDR SPD Timing.jpg' 'assets/source/UMAF内存时序调整2-DDR Non-SPD Timing.jpg' tests/layout-source.test.mjs src/index.template.html src/styles.css dist/laptop-performance-handoff.html
+git commit -m "fix: stack evidence images without cropping"
 ```
 
 ---
