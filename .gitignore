@@ -1,2 +1,5 @@
 .superpowers/
 .playwright-cli/
+node_modules/
+.cache/
+output/playwright/

@@ -1,0 +1,15 @@
+{
+  "name": "laptop-performance-handoff",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test --test-concurrency=1 tests/assets.test.mjs",
+    "verify": "npm test && npm run build && node scripts/validate-html.mjs",
+    "serve": "node scripts/serve.mjs"
+  },
+  "dependencies": {
+    "sharp": "0.35.3"
+  }
+}
