@@ -20,6 +20,7 @@ test('rendered copy matches the approved device handoff facts', async () => {
     'CCD1 已关闭', 'CPU 睿频已关闭', '接通电源 5000 MHz',
     'SPL 65W', 'sPPT 85W', 'fPPT 85W', '控制极限 CPU 温度',
     '独显直连', '高性能电源模式保持关闭', 'All Core Offset -20',
+    '开机自启', '开机自启自动应用配置',
     '16GB × 2 双通道', '5600 MT/s 正常保持',
     'ZenTimings = 当前 Windows 实际运行结果',
     'UMAF = 已记录字段的局部参数入口和回退对照',
@@ -28,6 +29,8 @@ test('rendered copy matches the approved device handoff facts', async () => {
     '接通电源 5000 MHz → 5200 MHz', '85–87°C',
     'MCHOSE HUB', '小飞机（MSI Afterburner）', 'HWiNFO 仅传感器模式',
     'AIDA64', 'TM5', '先询问 AI 再使用',
+    '性能调校参考档案', '当前调校基线已稳定运行', '当前设置基线',
+    'REFERENCE RULE / 使用原则',
     '全网最细！保姆级笔记本优化教程之cpu篇，小白也能降压定频，拯救你的cpu！适配于拯救者，鸡哥等绝大多数机型，演示机型8945hx 5070ti蛟龙16pro',
     '蛟龙16pro降温静音焚决（同类型笔记本直接可以抄作业）',
     'BV1yv78zQEnD', '22:35', 'BV1mvFpzoEp6',
@@ -41,6 +44,6 @@ test('rendered copy matches the approved device handoff facts', async () => {
     'https://www.bilibili.com/video/BV1mvFpzoEp6/?share_source=copy_web&vd_source=91e679d463038976da1b6275f56aec3c',
   ]);
 
-  const forbidden = ['单文件 HTML', 'Base64', 'Data URI', '图片内联', '离线查看', '交付格式'];
+  const forbidden = ['单文件 HTML', 'Base64', 'Data URI', '图片内联', '离线查看', '交付格式', '交接', '不要误删旁边的压缩包'];
   for (const phrase of forbidden) assert.ok(!text.includes(phrase), `visible implementation copy: ${phrase}`);
 });
