@@ -344,7 +344,7 @@ Expected: FAIL because `scripts/build.mjs` and `src/capture-bootstrap.js` do not
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="dark">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2308080b'/%3E%3Cpath d='M14 40 28 14h9l-6 14h18L34 52h-9l7-16H14z' fill='%23d2ff52'/%3E%3C/svg%3E">
-  <title>蛟龙 16 Pro 性能调校交接档案</title>
+  <title>蛟龙 16 Pro 性能调校参考档案</title>
   <script>{{capture-bootstrap}}</script>
   <style>{{styles}}</style>
 </head>
@@ -529,14 +529,14 @@ Use this exact section order and copy in `src/index.template.html`; retain the e
 <body>
   <div class="page-shell">
     <header class="topbar">
-      <strong>MECHREVO / HANDOFF 01</strong>
-      <div><span>设备：机械革命蛟龙 16 Pro · Ryzen 9 8945HX · RTX 5070 Ti</span><span>用途：游戏性能与散热平衡</span><b>记录于 2026-07-12 · 交接基线已稳定运行</b></div>
+      <strong>MECHREVO / TUNING GUIDE 01</strong>
+      <div><span>设备：机械革命蛟龙 16 Pro · Ryzen 9 8945HX · RTX 5070 Ti</span><span>用途：游戏性能与散热平衡</span><b>记录于 2026-07-12 · 当前调校基线已稳定运行</b></div>
     </header>
 
     <section class="hero" aria-labelledby="page-title">
       <div class="hero-copy" data-reveal>
-        <p class="eyebrow">PERFORMANCE TUNING · DEVICE HANDOFF</p>
-        <h1 id="page-title">性能调校<br>交接档案</h1>
+        <p class="eyebrow">PERFORMANCE TUNING · USER REFERENCE</p>
+        <h1 id="page-title">性能调校<br>参考档案</h1>
         <p>记录这台电脑已经完成的硬件与软件调整，并为参数回退、启动异常和后续调校保留可复现依据。</p>
       </div>
       <figure class="hero-media"><img src="{{asset:device-hero}}" alt="机械革命蛟龙 16 Pro 配置宣传图"></figure>
@@ -552,7 +552,7 @@ Use this exact section order and copy in `src/index.template.html`; retain the e
 
     <main>
       <section class="chapter" id="baseline" data-reveal>
-        <header class="chapter-heading"><span>00</span><div><h2>当前交接基线</h2><p>这是交接日期的静态记录，不会自动检测设置是否已回退。</p></div></header>
+        <header class="chapter-heading"><span>00</span><div><h2>当前设置基线</h2><p>这是记录日期的静态参考，不会自动检测设置是否已回退。</p></div></header>
         <dl class="baseline-grid">
           <div><dt>CPU TOPOLOGY</dt><dd>CCD1 已关闭</dd><p>按教程解锁 BIOS / UMAF 后设置。</p></div>
           <div><dt>CPU BOOST</dt><dd>CPU 睿频已关闭</dd><p>在 Windows 高性能电源计划中限制频率。</p></div>
@@ -563,9 +563,9 @@ Use this exact section order and copy in `src/index.template.html`; retain the e
 
       <section class="chapter" id="cpu" data-reveal>
         <header class="chapter-heading"><span>01</span><div><h2>CPU 与散热边界</h2><p>Windows 的高性能电源计划与机械革命控制台的高性能电源模式不是同一个开关。</p></div></header>
-        <article class="tutorial" id="tutorial-1"><small>教程 01 · BV1yv78zQEnD · 22:35</small><h3>全网最细！保姆级笔记本优化教程之cpu篇，小白也能降压定频，拯救你的cpu！适配于拯救者，鸡哥等绝大多数机型，演示机型8945hx 5070ti蛟龙16pro</h3><p>用于关闭 CCD1、BIOS 解锁、UMAF 安装和进入方式。</p><a href="https://www.bilibili.com/video/BV1yv78zQEnD/?share_source=copy_web&amp;vd_source=91e679d463038976da1b6275f56aec3c&amp;t=1355" target="_blank" rel="noreferrer">bilibili.com/video/BV1yv78zQEnD · 22:35</a></article>
+        <article class="tutorial" id="tutorial-1"><div class="tutorial-meta"><small>教程 01</small><span>BV1yv78zQEnD · 22:35</span></div><div class="tutorial-copy"><h3>全网最细！保姆级笔记本优化教程之cpu篇，小白也能降压定频，拯救你的cpu！适配于拯救者，鸡哥等绝大多数机型，演示机型8945hx 5070ti蛟龙16pro</h3><p>用于关闭 CCD1、BIOS 解锁、UMAF 安装和进入方式。</p></div><a class="tutorial-link" href="https://www.bilibili.com/video/BV1yv78zQEnD/?share_source=copy_web&amp;vd_source=91e679d463038976da1b6275f56aec3c&amp;t=1355" target="_blank" rel="noreferrer"><strong>打开 B 站教程 ↗</strong><span>bilibili.com/video/BV1yv78zQEnD · 22:35</span></a></article>
         <div class="media-step"><h3>接通电源 5000 MHz</h3><p>Windows 高性能电源计划：电池 4500 MHz，接通电源 5000 MHz。</p><img data-zoom src="{{asset:cpu-frequency}}" alt="Windows 高性能电源计划处理器最大频率设置"></div>
-        <article class="tutorial"><small>教程 02 · BV1mvFpzoEp6</small><h3>蛟龙16pro降温静音焚决（同类型笔记本直接可以抄作业）</h3><p>用于关闭 CPU 睿频、调出高性能电源计划和理解降温思路。</p><a href="https://www.bilibili.com/video/BV1mvFpzoEp6/?share_source=copy_web&amp;vd_source=91e679d463038976da1b6275f56aec3c" target="_blank" rel="noreferrer">bilibili.com/video/BV1mvFpzoEp6</a></article>
+        <article class="tutorial"><div class="tutorial-meta"><small>教程 02</small><span>BV1mvFpzoEp6</span></div><div class="tutorial-copy"><h3>蛟龙16pro降温静音焚决（同类型笔记本直接可以抄作业）</h3><p>用于关闭 CPU 睿频、调出高性能电源计划和理解降温思路。</p></div><a class="tutorial-link" href="https://www.bilibili.com/video/BV1mvFpzoEp6/?share_source=copy_web&amp;vd_source=91e679d463038976da1b6275f56aec3c" target="_blank" rel="noreferrer"><strong>打开 B 站教程 ↗</strong><span>bilibili.com/video/BV1mvFpzoEp6</span></a></article>
         <div class="media-step"><h3>CPU 功耗上限：SPL 65W · sPPT 85W · fPPT 85W</h3><p>机械革命控制台自定义模式限制 CPU 功耗上限，目的为控制极限 CPU 温度。</p><img data-zoom src="{{asset:control-power}}" alt="机械革命控制台自定义模式 CPU 功耗限制"></div>
       </section>
 
@@ -597,7 +597,7 @@ Use this exact section order and copy in `src/index.template.html`; retain the e
       </section>
     </main>
 
-    <footer><small>HANDOFF RULE / 交接原则</small><h2>一次只改一项。先截图，再测试；不稳定就回到已记录的基线。</h2></footer>
+    <footer><small>REFERENCE RULE / 使用原则</small><h2>一次只改一项。先截图，再测试；不稳定就回到已记录的基线。</h2></footer>
   </div>
   <dialog id="image-dialog"><button type="button" aria-label="关闭大图">关闭</button><img alt=""></dialog>
   <script>{{client-script}}</script>
@@ -719,10 +719,16 @@ h1 { max-width: 6em; margin: 3.8rem 0 1.5rem; font-size: clamp(4rem, 6vw, 7.2rem
 .baseline-grid dt { color: var(--muted); font-size: var(--font-label); letter-spacing: .12em; }
 .baseline-grid dd { margin: .8rem 0 .35rem; font-size: var(--font-value); font-weight: 800; }
 .baseline-grid p { margin: 0; color: var(--muted); font-size: var(--font-note); }
-.tutorial { display: grid; grid-template-columns: 8rem minmax(0, 1fr) auto; gap: 1.5rem; align-items: center; padding: 1.6rem 0; border-block: 1px solid #494653; }
-.tutorial h3 { margin: 0 0 .5rem; font-size: 1.15rem; line-height: 1.5; }
-.tutorial p { margin: 0; color: var(--muted); font-size: var(--font-note); }
-.tutorial a { padding: .8rem 1rem; background: var(--acid); color: #0a0a0c; font-weight: 800; text-decoration: none; }
+.tutorial { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr) minmax(15rem, 18rem); gap: 2rem; align-items: stretch; padding: 2rem 0; border-block: 1px solid #494653; }
+.tutorial-meta { padding-top: .25rem; }
+.tutorial-meta small, .tutorial-meta span { display: block; }
+.tutorial-meta span { margin-top: .45rem; color: var(--muted); font-size: var(--font-label); line-height: 1.5; }
+.tutorial-copy h3 { margin: 0 0 .5rem; font-size: 1.15rem; line-height: 1.5; }
+.tutorial-copy p { margin: 0; color: var(--muted); font-size: var(--font-note); }
+.tutorial-link { min-width: 0; padding: 1.1rem 1.25rem; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; background: var(--acid); color: #0a0a0c; text-decoration: none; transition: transform .18s ease, background .18s ease; }
+.tutorial-link strong { font-size: 1rem; }
+.tutorial-link span { margin-top: .4rem; max-width: 100%; font-size: var(--font-label); line-height: 1.45; overflow-wrap: anywhere; }
+.tutorial-link:hover, .tutorial-link:focus-visible { transform: translateY(-2px); background: #e0ff7d; }
 .media-step { margin-top: 4.5rem; }
 .media-step h3 { margin: 0 0 .5rem; font-size: 1.8rem; }
 .media-step p { max-width: 52rem; margin: 0 0 1.25rem; color: var(--muted); }
@@ -772,6 +778,7 @@ html[data-capture="true"] *, html[data-capture="true"] *::before, html[data-capt
   .hero-metrics, .baseline-grid { grid-template-columns: 1fr 1fr; }
   .chapter-heading { grid-template-columns: 1fr; }
   .tutorial, .stable-result, .future-grid, .tools-list { grid-template-columns: 1fr; }
+  .tutorial-link { width: 100%; }
   .stable-result { padding: 2rem 1.5rem; }
 }
 @media print {
@@ -1165,12 +1172,15 @@ git commit -m "feat: deliver laptop performance handoff page"
 **Files:**
 - Modify: `assets/source/UMAF内存时序调整1-DDR SPD Timing.jpg`
 - Modify: `assets/source/UMAF内存时序调整2-DDR Non-SPD Timing.jpg`
+- Modify: `tests/content.test.mjs`
 - Modify: `tests/layout-source.test.mjs`
 - Modify: `src/index.template.html`
 - Modify: `src/styles.css`
 - Modify: `dist/laptop-performance-handoff.html`
 
-- [ ] **Step 1: Write the failing media-layout regression contract**
+- [ ] **Step 1: Write the failing wording and media-layout regression contracts**
+
+In `tests/content.test.mjs`, require the visible phrases `性能调校参考档案`, `当前调校基线已稳定运行`, `当前设置基线`, and `REFERENCE RULE / 使用原则`; add `交接` to the forbidden visible-copy list.
 
 Add `import sharp from 'sharp';` and this test to `tests/layout-source.test.mjs`:
 
@@ -1184,10 +1194,15 @@ test('evidence images stack vertically at their original ratios and the mobile h
   assert.match(template, /class="media-stack"/);
   assert.match(template, /class="umaf-stack"/);
   assert.equal((template.match(/class="umaf-image"/g) ?? []).length, 2);
+  assert.equal((template.match(/class="tutorial-meta"/g) ?? []).length, 2);
+  assert.equal((template.match(/class="tutorial-copy"/g) ?? []).length, 2);
+  assert.equal((template.match(/class="tutorial-link"/g) ?? []).length, 2);
   assert.doesNotMatch(template, /media-pair|umaf-grid|umaf-crop/);
   assert.match(css, /\.media-stack\s*\{[^}]*grid-template-columns:\s*1fr/);
   assert.match(css, /\.umaf-stack\s*\{[^}]*grid-template-columns:\s*1fr/);
   assert.match(css, /\.umaf-image\s*\{[^}]*height:\s*auto;[^}]*object-fit:\s*contain/);
+  assert.match(css, /\.tutorial\s*\{[^}]*grid-template-columns:\s*8\.5rem minmax\(0, 1fr\) minmax\(15rem, 18rem\)/);
+  assert.match(css, /\.tutorial-link\s*\{[^}]*display:\s*flex;[^}]*background:\s*var\(--acid\)/);
   assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.hero-media\s*\{\s*height:\s*auto;\s*\}[\s\S]*?\.hero-media img\s*\{[^}]*height:\s*auto;[^}]*object-fit:\s*contain/);
 
   const [spd, nonSpd] = await Promise.all([
@@ -1201,14 +1216,16 @@ test('evidence images stack vertically at their original ratios and the mobile h
 
 - [ ] **Step 2: Run the test and verify RED**
 
-Run: `node --test tests/layout-source.test.mjs`
+Run: `node --test tests/content.test.mjs tests/layout-source.test.mjs`
 
-Expected: FAIL because the existing template still uses horizontal pair/grid classes and the mobile hero uses a fixed-height cover crop.
+Expected: FAIL because the visible page still uses “交接”, tutorial links use the malformed four-child/three-column structure, evidence uses horizontal pair/grid classes, and the mobile hero uses a fixed-height cover crop.
 
 - [ ] **Step 3: Update the semantic media wrappers**
 
 In `src/index.template.html`:
 
+- Replace all visible “交接”/`HANDOFF` wording with the approved `性能调校参考档案`, `当前调校基线已稳定运行`, `当前设置基线`, `REFERENCE RULE / 使用原则`, `TUNING GUIDE`, and `USER REFERENCE` wording.
+- Rebuild each tutorial article as `tutorial-meta` + `tutorial-copy` + `tutorial-link`; the link contains a strong `打开 B 站教程 ↗` label and a secondary visible URL while preserving the exact approved href.
 - Rename the GPU/power wrapper from `media-pair` to `media-stack` while preserving GPU first and power mode second.
 - Rename the UMAF wrapper from `umaf-grid` to `umaf-stack` while preserving SPD first and Non-SPD second.
 - Rename both UMAF image classes from `umaf-crop` to `umaf-image`.
@@ -1217,6 +1234,7 @@ In `src/index.template.html`:
 
 In `src/styles.css`:
 
+- Make the tutorial a stable three-column desktop row (`8.5rem`, flexible copy, `15–18rem` action area); style `.tutorial-link` as a full, readable acid-green action block, and stack it at full width on mobile.
 - Make `.media-stack` and `.umaf-stack` single-column grids at every viewport.
 - Give `.umaf-image` `width: 100%`, `height: auto`, and `object-fit: contain`; remove fixed-height cropping and `object-position`.
 - Under `@media (max-width: 900px)`, set `.hero-media` to `height: auto` and `.hero-media img` to `height: auto; object-fit: contain` so the square product image is never horizontally cropped.
@@ -1227,7 +1245,7 @@ In `src/styles.css`:
 Run:
 
 ```powershell
-node --test tests/layout-source.test.mjs
+node --test tests/content.test.mjs tests/layout-source.test.mjs
 npm test
 npm run build
 git diff --check
@@ -1238,8 +1256,8 @@ Expected: the focused test and full suite pass, the revised source images conver
 - [ ] **Step 6: Commit only the late media revision**
 
 ```powershell
-git add -- 'assets/source/UMAF内存时序调整1-DDR SPD Timing.jpg' 'assets/source/UMAF内存时序调整2-DDR Non-SPD Timing.jpg' tests/layout-source.test.mjs src/index.template.html src/styles.css dist/laptop-performance-handoff.html
-git commit -m "fix: stack evidence images without cropping"
+git add -- 'assets/source/UMAF内存时序调整1-DDR SPD Timing.jpg' 'assets/source/UMAF内存时序调整2-DDR Non-SPD Timing.jpg' tests/content.test.mjs tests/layout-source.test.mjs src/index.template.html src/styles.css dist/laptop-performance-handoff.html
+git commit -m "fix: refine reference wording and evidence layout"
 ```
 
 ---
