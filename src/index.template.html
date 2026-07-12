@@ -10,18 +10,79 @@
   <style>{{styles}}</style>
 </head>
 <body>
-  <main id="handoff-page">
-    <img src="{{asset:device-hero}}" alt="机械革命蛟龙 16 Pro 配置宣传图">
-    <img src="{{asset:cpu-frequency}}" alt="Windows 高性能电源计划处理器最大频率设置">
-    <img src="{{asset:control-power}}" alt="机械革命控制台自定义模式 CPU 功耗限制">
-    <img src="{{asset:gpu-mode}}" alt="机械革命控制台独显直连设置">
-    <img src="{{asset:console-power-mode}}" alt="机械革命控制台高性能电源模式关闭">
-    <img src="{{asset:uxtu-undervolt}}" alt="UXTU 全核负压负 20 设置">
-    <img src="{{asset:uxtu-recovery}}" alt="UXTU 无法启动时需要删除的配置文件夹">
-    <img src="{{asset:memory-stable}}" alt="ZenTimings 显示的当前稳定内存参数">
-    <img src="{{asset:umaf-spd}}" alt="UMAF DDR SPD Timing 已记录字段">
-    <img src="{{asset:umaf-non-spd}}" alt="UMAF DDR Non-SPD Timing 已记录字段">
-  </main>
+  <div class="page-shell">
+    <header class="topbar">
+      <strong>MECHREVO / HANDOFF 01</strong>
+      <div><span>设备：机械革命蛟龙 16 Pro · Ryzen 9 8945HX · RTX 5070 Ti</span><span>用途：游戏性能与散热平衡</span><b>记录于 2026-07-12 · 交接基线已稳定运行</b></div>
+    </header>
+
+    <section class="hero" aria-labelledby="page-title">
+      <div class="hero-copy" data-reveal>
+        <p class="eyebrow">PERFORMANCE TUNING · DEVICE HANDOFF</p>
+        <h1 id="page-title">性能调校<br>交接档案</h1>
+        <p>记录这台电脑已经完成的硬件与软件调整，并为参数回退、启动异常和后续调校保留可复现依据。</p>
+      </div>
+      <figure class="hero-media"><img src="{{asset:device-hero}}" alt="机械革命蛟龙 16 Pro 配置宣传图"></figure>
+      <dl class="hero-metrics">
+        <div><dt>CPU 接电定频</dt><dd>5.0 GHz</dd></div>
+        <div><dt>UXTU 全核负压</dt><dd>-20</dd></div>
+        <div><dt>当前稳定内存频率</dt><dd>5600 MT/s</dd></div>
+        <div><dt>当前内存</dt><dd>16GB × 2</dd></div>
+      </dl>
+    </section>
+
+    <aside class="critical-note"><strong>先看这里</strong><span>约 80MB 的 UMAF 分区不可删除或格式化；BIOS、负压和超频调整可能造成不稳定。修改前保留当前值截图，不确定参数含义时不要一次修改多项。</span></aside>
+
+    <main>
+      <section class="chapter" id="baseline" data-reveal>
+        <header class="chapter-heading"><span>00</span><div><h2>当前交接基线</h2><p>这是交接日期的静态记录，不会自动检测设置是否已回退。</p></div></header>
+        <dl class="baseline-grid">
+          <div><dt>CPU TOPOLOGY</dt><dd>CCD1 已关闭</dd><p>按教程解锁 BIOS / UMAF 后设置。</p></div>
+          <div><dt>CPU BOOST</dt><dd>CPU 睿频已关闭</dd><p>在 Windows 高性能电源计划中限制频率。</p></div>
+          <div><dt>GPU ROUTE</dt><dd>独显直连</dd><p>机械革命控制台保持启用。</p></div>
+          <div><dt>MEMORY</dt><dd>16GB × 2 双通道</dd><p>原装 32GB 单条已经更换。</p></div>
+        </dl>
+      </section>
+
+      <section class="chapter" id="cpu" data-reveal>
+        <header class="chapter-heading"><span>01</span><div><h2>CPU 与散热边界</h2><p>Windows 的高性能电源计划与机械革命控制台的高性能电源模式不是同一个开关。</p></div></header>
+        <article class="tutorial" id="tutorial-1"><small>教程 01 · BV1yv78zQEnD · 22:35</small><h3>全网最细！保姆级笔记本优化教程之cpu篇，小白也能降压定频，拯救你的cpu！适配于拯救者，鸡哥等绝大多数机型，演示机型8945hx 5070ti蛟龙16pro</h3><p>用于关闭 CCD1、BIOS 解锁、UMAF 安装和进入方式。</p><a href="https://www.bilibili.com/video/BV1yv78zQEnD/?share_source=copy_web&amp;vd_source=91e679d463038976da1b6275f56aec3c&amp;t=1355" target="_blank" rel="noreferrer">bilibili.com/video/BV1yv78zQEnD · 22:35</a></article>
+        <div class="media-step"><h3>接通电源 5000 MHz</h3><p>Windows 高性能电源计划：电池 4500 MHz，接通电源 5000 MHz。</p><img data-zoom src="{{asset:cpu-frequency}}" alt="Windows 高性能电源计划处理器最大频率设置"></div>
+        <article class="tutorial"><small>教程 02 · BV1mvFpzoEp6</small><h3>蛟龙16pro降温静音焚决（同类型笔记本直接可以抄作业）</h3><p>用于关闭 CPU 睿频、调出高性能电源计划和理解降温思路。</p><a href="https://www.bilibili.com/video/BV1mvFpzoEp6/?share_source=copy_web&amp;vd_source=91e679d463038976da1b6275f56aec3c" target="_blank" rel="noreferrer">bilibili.com/video/BV1mvFpzoEp6</a></article>
+        <div class="media-step"><h3>CPU 功耗上限：SPL 65W · sPPT 85W · fPPT 85W</h3><p>机械革命控制台自定义模式限制 CPU 功耗上限，目的为控制极限 CPU 温度。</p><img data-zoom src="{{asset:control-power}}" alt="机械革命控制台自定义模式 CPU 功耗限制"></div>
+      </section>
+
+      <section class="chapter" id="gpu" data-reveal>
+        <header class="chapter-heading"><span>02</span><div><h2>显卡与电源模式</h2><p>保持独显直连，同时让机械革命控制台的高性能电源模式保持关闭。</p></div></header>
+        <div class="media-pair"><figure><img data-zoom src="{{asset:gpu-mode}}" alt="机械革命控制台独显直连设置"><figcaption>显卡模式：独显直连</figcaption></figure><figure><img data-zoom src="{{asset:console-power-mode}}" alt="机械革命控制台高性能电源模式关闭"><figcaption>高性能电源模式保持关闭</figcaption></figure></div>
+      </section>
+
+      <section class="chapter" id="uxtu" data-reveal>
+        <header class="chapter-heading"><span>03</span><div><h2>UXTU 负压与启动异常</h2><p>-20 是这台电脑的记录值，不是其他设备可以直接照抄的通用值。</p></div></header>
+        <div class="media-step"><h3>AMD Curve Optimiser · All Core Offset -20</h3><p>如果出现蓝屏、重启、游戏或应用崩溃，优先恢复默认并重新验证。</p><img data-zoom src="{{asset:uxtu-undervolt}}" alt="UXTU 全核负压负 20 设置"></div>
+        <div class="media-step recovery"><h3>UXTU 没自启，手动打开也没反应</h3><p>删除 AppData\Local\JamesCJ60 下截图红圈所示的 Universal x86 Tuning Utility 配置文件夹；不要误删旁边的压缩包。</p><img data-zoom src="{{asset:uxtu-recovery}}" alt="UXTU 无法启动时需要删除的配置文件夹"></div>
+      </section>
+
+      <section class="chapter memory-chapter" id="memory" data-reveal>
+        <header class="chapter-heading"><span>04</span><div><h2>当前稳定内存结果</h2><p>5600 MT/s 已经调整完成并稳定运行，正常情况下保持不动。</p></div></header>
+        <div class="stable-result"><div><small>CURRENT STABLE RESULT</small><h3>5600 MT/s 正常保持</h3><p>原装 32GB 单条已经替换为 16GB × 2 双通道。只有发生稳定性问题时，才考虑降频、放宽或回退已记录参数，并逐项验证。</p><p><strong>ZenTimings = 当前 Windows 实际运行结果</strong></p></div><img data-zoom src="{{asset:memory-stable}}" alt="ZenTimings 显示的当前稳定内存参数"></div>
+        <div class="umaf-reference"><header><small>局部回退 / 恢复参考</small><h3>UMAF = 已记录字段的局部参数入口和回退对照</h3><p>两张图只覆盖部分时序与小参数。设置被回退时，只恢复图中明确记录的字段；出现稳定性问题时可逐项放宽，未记录参数不要凭空推断。</p></header><div class="umaf-grid"><figure><img class="umaf-crop" data-zoom src="{{asset:umaf-spd}}" alt="UMAF DDR SPD Timing 已记录字段"><figcaption>DDR SPD Timing · 已记录字段</figcaption></figure><figure><img class="umaf-crop" data-zoom src="{{asset:umaf-non-spd}}" alt="UMAF DDR Non-SPD Timing 已记录字段"><figcaption>DDR Non-SPD Timing · 已记录字段</figcaption></figure></div><p class="umaf-warning">约 80MB 的 UMAF 分区不可删除。开机或重启时持续按 F2，选择最右边第三项，再进入后续界面的第二项；安装与进入方法参见教程 01。</p></div>
+      </section>
+
+      <section class="chapter" id="future" data-reveal>
+        <header class="chapter-heading"><span>05</span><div><h2>之后可以怎么调</h2><p>这里只讨论 CPU 定频和散热条件；内存 5600 MT/s 不属于待提高项目。</p></div></header>
+        <div class="future-grid"><div class="temperature"><small>游戏温度参考</small><strong>85–87°C</strong><p>使用上风压散热器后，最终游戏温度稳定在这个范围可接受。</p></div><ol><li><b>先改善散热：</b>安装并使用上风压散热器。</li><li><b>再调整接电定频：</b>Windows 高性能电源计划中的接通电源 5000 MHz → 5200 MHz；电池 4500 MHz 不改。</li><li><b>一次只改一项：</b>保留截图，在实际游戏和稳定性测试中验证。</li></ol></div>
+      </section>
+
+      <section class="chapter" id="tools" data-reveal>
+        <header class="chapter-heading"><span>06</span><div><h2>已经安装的软件</h2><p>监控工具可以直接使用；压力测试和参数判断工具先询问 AI 再使用。</p></div></header>
+        <div class="tools-list"><article><small>鼠标驱动</small><h3>MCHOSE HUB</h3><p>新鼠标驱动，桌面已有快捷方式。</p></article><article><small>游戏监控</small><h3>小飞机（MSI Afterburner）</h3><p>查看游戏内温度、频率、占用率和帧率。</p></article><article><small>传感器</small><h3>HWiNFO 仅传感器模式</h3><p>查看温度、功耗、频率和峰值。</p></article><article><small>先询问 AI 再使用</small><h3>AIDA64 · TM5 · ZenTimings</h3><p>先确认用途、测试步骤、停止条件和结果判断，再开始压力测试或参数调整。</p></article></div>
+      </section>
+    </main>
+
+    <footer><small>HANDOFF RULE / 交接原则</small><h2>一次只改一项。先截图，再测试；不稳定就回到已记录的基线。</h2></footer>
+  </div>
+  <dialog id="image-dialog"><button type="button" aria-label="关闭大图">关闭</button><img alt=""></dialog>
   <script>{{client-script}}</script>
 </body>
 </html>
