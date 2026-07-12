@@ -47,26 +47,26 @@
       <section class="chapter" id="cpu" data-reveal>
         <header class="chapter-heading"><span>01</span><div><h2>CPU 与散热边界</h2><p>Windows 的高性能电源计划与机械革命控制台的高性能电源模式不是同一个开关。</p></div></header>
         <article class="tutorial" id="tutorial-1"><div class="tutorial-meta"><small>教程 01 · BV1yv78zQEnD · 22:35</small></div><div class="tutorial-copy"><h3>全网最细！保姆级笔记本优化教程之cpu篇，小白也能降压定频，拯救你的cpu！适配于拯救者，鸡哥等绝大多数机型，演示机型8945hx 5070ti蛟龙16pro</h3><p>用于关闭 CCD1、BIOS 解锁、UMAF 安装和进入方式。</p></div><a class="tutorial-link" href="https://www.bilibili.com/video/BV1yv78zQEnD/?share_source=copy_web&amp;vd_source=91e679d463038976da1b6275f56aec3c&amp;t=1355" target="_blank" rel="noreferrer"><strong>打开 B 站教程 ↗</strong><span>www.bilibili.com/video/BV1yv78zQEnD</span></a></article>
-        <div class="media-step"><h3>接通电源 5000 MHz</h3><p>Windows 高性能电源计划：电池 4500 MHz，接通电源 5000 MHz。</p><img data-zoom src="{{asset:cpu-frequency}}" alt="Windows 高性能电源计划处理器最大频率设置"></div>
+        <div class="media-step"><h3>接通电源 5000 MHz</h3><p>Windows 高性能电源计划：电池 4500 MHz，接通电源 5000 MHz。</p><img src="{{asset:cpu-frequency}}" alt="Windows 高性能电源计划处理器最大频率设置"></div>
         <article class="tutorial"><div class="tutorial-meta"><small>教程 02 · BV1mvFpzoEp6</small></div><div class="tutorial-copy"><h3>蛟龙16pro降温静音焚决（同类型笔记本直接可以抄作业）</h3><p>用于关闭 CPU 睿频、调出高性能电源计划和理解降温思路。</p></div><a class="tutorial-link" href="https://www.bilibili.com/video/BV1mvFpzoEp6/?share_source=copy_web&amp;vd_source=91e679d463038976da1b6275f56aec3c" target="_blank" rel="noreferrer"><strong>打开 B 站教程 ↗</strong><span>www.bilibili.com/video/BV1mvFpzoEp6</span></a></article>
-        <div class="media-step"><h3>CPU 功耗上限：SPL 65W · sPPT 85W · fPPT 85W</h3><p>机械革命控制台自定义模式限制 CPU 功耗上限，目的为控制极限 CPU 温度。</p><img data-zoom src="{{asset:control-power}}" alt="机械革命控制台自定义模式 CPU 功耗限制"></div>
+        <div class="media-step"><h3>CPU 功耗上限：SPL 65W · sPPT 85W · fPPT 85W</h3><p>机械革命控制台自定义模式限制 CPU 功耗上限，目的为控制极限 CPU 温度。</p><img src="{{asset:control-power}}" alt="机械革命控制台自定义模式 CPU 功耗限制"></div>
       </section>
 
       <section class="chapter" id="gpu" data-reveal>
         <header class="chapter-heading"><span>02</span><div><h2>显卡与电源模式</h2><p>保持独显直连，同时让机械革命控制台的高性能电源模式保持关闭。</p></div></header>
-        <div class="media-stack"><figure><img data-zoom src="{{asset:gpu-mode}}" alt="机械革命控制台独显直连设置"><figcaption>显卡模式：独显直连</figcaption></figure><figure><img data-zoom src="{{asset:console-power-mode}}" alt="机械革命控制台高性能电源模式关闭"><figcaption>高性能电源模式保持关闭</figcaption></figure></div>
+        <div class="media-stack"><figure><img src="{{asset:gpu-mode}}" alt="机械革命控制台独显直连设置"><figcaption>显卡模式：独显直连</figcaption></figure><figure><img src="{{asset:console-power-mode}}" alt="机械革命控制台高性能电源模式关闭"><figcaption>高性能电源模式保持关闭</figcaption></figure></div>
       </section>
 
       <section class="chapter" id="uxtu" data-reveal>
         <header class="chapter-heading"><span>03</span><div><h2>UXTU 负压与启动异常</h2><p>-20 是这台电脑的记录值，不是其他设备可以直接照抄的通用值。</p></div></header>
-        <div class="media-step"><h3>AMD Curve Optimiser · All Core Offset -20</h3><p>如果出现蓝屏、重启、游戏或应用崩溃，优先恢复默认并重新验证。</p><img data-zoom src="{{asset:uxtu-undervolt}}" alt="UXTU 全核负压负 20 设置"></div>
-        <div class="media-step recovery"><h3>UXTU 没自启，手动打开也没反应</h3><p>删除 AppData\Local\JamesCJ60 下截图红圈所示的 Universal x86 Tuning Utility 配置文件夹。删除该文件夹后重新打开 UXTU，并在设置中开启“开机自启”和“开机自启自动应用配置”。</p><img data-zoom src="{{asset:uxtu-recovery}}" alt="UXTU 无法启动时需要删除的配置文件夹"></div>
+        <div class="media-step"><h3>AMD Curve Optimiser · All Core Offset -20</h3><p>如果出现蓝屏、重启、游戏或应用崩溃，优先恢复默认并重新验证。</p><img src="{{asset:uxtu-undervolt}}" alt="UXTU 全核负压负 20 设置"></div>
+        <div class="media-step recovery"><h3>UXTU 没自启，手动打开也没反应</h3><p>删除 AppData\Local\JamesCJ60 下截图红圈所示的 Universal x86 Tuning Utility 配置文件夹。删除该文件夹后重新打开 UXTU，并在设置中开启“开机自启”和“开机自启自动应用配置”。</p><img src="{{asset:uxtu-recovery}}" alt="UXTU 无法启动时需要删除的配置文件夹"></div>
       </section>
 
       <section class="chapter memory-chapter" id="memory" data-reveal>
         <header class="chapter-heading"><span>04</span><div><h2>当前稳定内存结果</h2><p>5600 MT/s 已经调整完成并稳定运行，正常情况下保持不动。</p></div></header>
-        <div class="stable-result"><div><small>CURRENT STABLE RESULT</small><h3>5600 MT/s 正常保持</h3><p>原装 32GB 单条已经替换为 16GB × 2 双通道。只有发生稳定性问题时，才考虑降频、放宽或回退已记录参数，并逐项验证。</p><p><strong>ZenTimings = 当前 Windows 实际运行结果</strong></p></div><img data-zoom src="{{asset:memory-stable}}" alt="ZenTimings 显示的当前稳定内存参数"></div>
-        <div class="umaf-reference"><header><small>局部回退 / 恢复参考</small><h3>UMAF = 已记录字段的局部参数入口和回退对照</h3><p>两张图只覆盖部分时序与小参数。设置被回退时，只恢复图中明确记录的字段；出现稳定性问题时可逐项放宽，未记录参数不要凭空推断。</p></header><div class="umaf-stack"><figure><img class="umaf-image" data-zoom src="{{asset:umaf-spd}}" alt="UMAF DDR SPD Timing 已记录字段"><figcaption>DDR SPD Timing · 已记录字段</figcaption></figure><figure><img class="umaf-image" data-zoom src="{{asset:umaf-non-spd}}" alt="UMAF DDR Non-SPD Timing 已记录字段"><figcaption>DDR Non-SPD Timing · 已记录字段</figcaption></figure></div><p class="umaf-warning">约 80MB 的 UMAF 分区不可删除。开机或重启时持续按 F2，选择最右边第三项，再进入后续界面的第二项；安装与进入方法参见教程 01。</p></div>
+        <div class="stable-result"><div><small>CURRENT STABLE RESULT</small><h3>5600 MT/s 正常保持</h3><p>原装 32GB 单条已经替换为 16GB × 2 双通道。只有发生稳定性问题时，才考虑降频、放宽或回退已记录参数，并逐项验证。</p><p><strong>ZenTimings = 当前 Windows 实际运行结果</strong></p></div><img src="{{asset:memory-stable}}" alt="ZenTimings 显示的当前稳定内存参数"></div>
+        <div class="umaf-reference"><header><small>局部回退 / 恢复参考</small><h3>UMAF = 已记录字段的局部参数入口和回退对照</h3><p>两张图只覆盖部分时序与小参数。设置被回退时，只恢复图中明确记录的字段；出现稳定性问题时可逐项放宽，未记录参数不要凭空推断。</p></header><div class="umaf-stack"><figure><img class="umaf-image" src="{{asset:umaf-spd}}" alt="UMAF DDR SPD Timing 已记录字段"><figcaption>DDR SPD Timing · 已记录字段</figcaption></figure><figure><img class="umaf-image" src="{{asset:umaf-non-spd}}" alt="UMAF DDR Non-SPD Timing 已记录字段"><figcaption>DDR Non-SPD Timing · 已记录字段</figcaption></figure></div><p class="umaf-warning">约 80MB 的 UMAF 分区不可删除。开机或重启时持续按 F2，选择最右边第三项，再进入后续界面的第二项；安装与进入方法参见教程 01。</p></div>
       </section>
 
       <section class="chapter" id="future" data-reveal>
@@ -82,7 +82,6 @@
 
     <footer><small>REFERENCE RULE / 使用原则</small><h2>一次只改一项。先截图，再测试；不稳定就回到已记录的基线。</h2></footer>
   </div>
-  <dialog id="image-dialog"><button type="button" aria-label="关闭大图">关闭</button><img alt=""></dialog>
   <script>{{client-script}}</script>
 </body>
 </html>

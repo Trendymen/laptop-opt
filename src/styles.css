@@ -57,20 +57,20 @@ h1 { max-width: 6em; margin: 3.8rem 0 1.5rem; font-size: clamp(4rem, 6vw, 7.2rem
 .media-step { margin-top: 4.5rem; }
 .media-step h3 { margin: 0 0 .5rem; font-size: 1.8rem; }
 .media-step p { max-width: 52rem; margin: 0 0 1.25rem; color: var(--muted); }
-.media-step img, .media-stack img { width: 100%; border: 1px solid var(--line); background: var(--surface); cursor: zoom-in; }
+.media-step img, .media-stack img { width: 100%; border: 1px solid var(--line); background: var(--surface); }
 .media-stack { display: grid; grid-template-columns: 1fr; gap: 1.75rem; }
 figure { margin: 0; }
 figcaption { padding-top: .8rem; color: var(--muted); font-size: var(--font-note); }
 .stable-result { display: grid; grid-template-columns: 1fr minmax(22rem, .55fr); gap: 3rem; align-items: center; padding: 3rem; border-block: 2px solid var(--acid); background: linear-gradient(135deg, #111119, #0a0a0d); }
 .stable-result h3 { margin: 1rem 0; color: var(--acid); font-size: clamp(3rem, 5vw, 6rem); line-height: .95; }
 .stable-result p { max-width: 48rem; color: var(--muted); }
-.stable-result img { max-height: 44rem; margin: auto; cursor: zoom-in; }
+.stable-result img { max-height: 44rem; margin: auto; }
 .umaf-reference { margin-top: 5rem; }
 .umaf-reference header { max-width: 58rem; }
 .umaf-reference h3 { margin: .7rem 0; font-size: 2rem; }
 .umaf-reference header p, .umaf-warning { color: var(--muted); }
 .umaf-stack { display: grid; grid-template-columns: 1fr; gap: 1.75rem; margin-top: 2rem; }
-.umaf-image { width: 100%; height: auto; object-fit: contain; cursor: zoom-in; border: 1px solid var(--line); }
+.umaf-image { width: 100%; height: auto; object-fit: contain; border: 1px solid var(--line); }
 .umaf-warning { margin-top: 2rem; padding: 1.3rem 1.5rem; border-left: 4px solid var(--danger); background: #171216; }
 .future-grid { display: grid; grid-template-columns: .75fr 1.25fr; gap: 2rem; }
 .temperature { min-height: 23rem; padding: 2.5rem; display: flex; flex-direction: column; justify-content: space-between; background: var(--violet); color: #0a0a0c; }
@@ -85,10 +85,6 @@ figcaption { padding-top: .8rem; color: var(--muted); font-size: var(--font-note
 footer { padding: 6rem var(--gutter) 7rem; background: #f1f0eb; color: #0a0a0c; }
 footer small { color: #4f46c7; }
 footer h2 { max-width: 68rem; margin: 2rem 0 0; font-size: clamp(3rem, 6vw, 6.5rem); line-height: .98; letter-spacing: -.05em; }
-dialog { width: min(92vw, 110rem); max-height: 92vh; padding: 3.5rem 1rem 1rem; border: 0; background: #050507; color: #fff; }
-dialog::backdrop { background: #000d; }
-dialog button { position: absolute; top: .8rem; right: 1rem; padding: .6rem 1rem; }
-dialog img { max-height: 84vh; margin: auto; object-fit: contain; }
 [data-reveal] { opacity: 0; transform: translateY(1.5rem); transition: opacity .6s ease, transform .6s ease; }
 [data-reveal].is-visible { opacity: 1; transform: none; }
 html[data-capture="true"] [data-reveal] { opacity: 1; transform: none; transition: none; }

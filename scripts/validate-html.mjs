@@ -16,8 +16,13 @@ function decodeNumericCharacterReferences(value) {
   });
 }
 
+function extractAttributeValues(html, attributeName) {
+  const attributePattern = new RegExp(`\\b${attributeName}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, 'gi');
+  return [...html.matchAll(attributePattern)].map((match) => match[1] ?? match[2] ?? match[3]);
+}
+
 export function extractVisibleText(html) {
-  const visibleAttributes = [...html.matchAll(/\b(?:alt|title|aria-label|placeholder)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)]
+  const visibleAttributes = [...html.matchAll(/\b(?:alt|title|aria-label|placeholder|value|label)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)]
     .map((match) => match[1] ?? match[2] ?? match[3]);
   const bodyText = html.replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -30,15 +35,18 @@ export function validateHtml(html) {
   for (const phrase of ['单文件 HTML', 'Base64', 'Data URI', '图片内联', '离线查看', '交付格式']) {
     assert.ok(!visible.includes(phrase), `visible implementation copy: ${phrase}`);
   }
+  const resourceHtml = decodeNumericCharacterReferences(html);
   assert.equal((html.match(/data:image\/webp;base64,/g) ?? []).length, 10, 'expected ten WebP Data URIs');
-  assert.doesNotMatch(html, /<img\b[^>]*\bsrc\s*=\s*(?:"(?!data:)[^"]*"|'(?!data:)[^']*'|(?!data:)[^\s"'=<>`]+)/i, 'external image source');
-  assert.doesNotMatch(html, /<img\b[^>]*\bsrcset\s*=\s*(?:["']\s*(?:https?:)?\/\/|(?:https?:)?\/\/)/i, 'external image source');
-  assert.doesNotMatch(html, /<script\b[^>]*\bsrc\s*=/i, 'external script');
-  assert.doesNotMatch(html, /\b(?:src|poster)\s*=\s*(?:["']\s*(?:https?:)?\/\/|(?:https?:)?\/\/)/i, 'external media source');
-  assert.doesNotMatch(html, /<link\b[^>]*\brel\s*=\s*(?:"[^"]*\bstylesheet\b[^"]*"|'[^']*\bstylesheet\b[^']*'|stylesheet\b)/i, 'external stylesheet');
+  assert.doesNotMatch(resourceHtml, /<img\b[^>]*\bsrc\s*=\s*(?:"(?!data:)[^"]*"|'(?!data:)[^']*'|(?!data:)[^\s"'=<>`]+)/i, 'external image source');
+  for (const srcset of extractAttributeValues(resourceHtml, 'srcset')) {
+    assert.doesNotMatch(srcset, /(?:https?:)?\/\//i, 'external image source');
+  }
+  assert.doesNotMatch(resourceHtml, /<script\b[^>]*\bsrc\s*=/i, 'external script');
+  assert.doesNotMatch(resourceHtml, /\b(?:src|poster)\s*=\s*(?:["']\s*(?:https?:)?\/\/|(?:https?:)?\/\/)/i, 'external media source');
+  assert.doesNotMatch(resourceHtml, /<link\b[^>]*\brel\s*=\s*(?:"[^"]*\bstylesheet\b[^"]*"|'[^']*\bstylesheet\b[^']*'|stylesheet\b)/i, 'external stylesheet');
   const styleText = [
-    ...[...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map((match) => match[1]),
-    ...[...html.matchAll(/\bstyle\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)]
+    ...[...resourceHtml.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map((match) => match[1]),
+    ...[...resourceHtml.matchAll(/\bstyle\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)]
       .map((match) => match[1] ?? match[2] ?? match[3]),
   ].join('\n');
   assert.doesNotMatch(styleText, /(?:url\(\s*["']?\s*|@import\s+(?:url\(\s*)?["']?\s*)(?:https?:)?\/\//i, 'external CSS resource');

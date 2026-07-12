@@ -2,27 +2,20 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-test('motion and lightbox interactions are accessible', async () => {
-  const client = await readFile('src/client.js', 'utf8');
-
-  for (const token of [
-    'prefers-reduced-motion: reduce',
-    "dataset.capture === 'true'",
-    'IntersectionObserver',
-    "classList.add('is-visible')",
-    "querySelectorAll('img[data-zoom]')",
-    'image.tabIndex = 0',
-    "setAttribute('role', 'button')",
-    "image.addEventListener('click', open)",
-    "image.addEventListener('keydown'",
-    "event.key === 'Enter'",
-    "event.key === ' '",
-    'event.preventDefault()',
-    'dialog.showModal()',
-    'dialogImage.alt = image.alt',
-    "closeButton.addEventListener('click'",
-    'event.target === dialog',
-    "event.key === 'Escape'",
-    'dialog.open',
-  ]) assert.ok(client.includes(token), `missing interaction invariant: ${token}`);
+test('motion remains accessible while evidence images stay static', async () => {
+  const [client, template, css] = await Promise.all([
+    readFile('src/client.js', 'utf8'),
+    readFile('src/index.template.html', 'utf8'),
+    readFile('src/styles.css', 'utf8'),
+  ]);
+  assert.match(client, /document\.documentElement\.classList\.add\('js-ready'\)/);
+  assert.match(client, /prefers-reduced-motion/);
+  assert.match(client, /dataset\.capture === 'true'/);
+  assert.match(client, /IntersectionObserver/);
+  assert.match(client, /classList\.add\('is-visible'\)/);
+  for (const forbidden of [/showModal/, /data-zoom/, /image-dialog/, /window\.open/, /preventDefault/]) {
+    assert.doesNotMatch(client, forbidden);
+  }
+  assert.doesNotMatch(template, /data-zoom|<dialog|image-dialog/);
+  assert.doesNotMatch(css, /cursor:\s*zoom-in|dialog\s*\{|dialog::backdrop/);
 });

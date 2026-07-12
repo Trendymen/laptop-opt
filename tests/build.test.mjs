@@ -44,6 +44,20 @@ test('validator rejects remote resources in HTML attribute variants', async () =
   }
 });
 
+test('validator rejects remote candidates anywhere in srcset attributes', async () => {
+  await buildPage();
+  const html = await readFile(outputPath, 'utf8');
+  const variants = [
+    ['source srcset', html.replace('</main>', '<source srcset=https://example.com/leak.webp></main>')],
+    ['later img candidate', html.replace('<img ', '<img srcset="data/local 1x, https://example.com/leak.webp 2x" ')],
+    ['later source candidate', html.replace('</main>', '<source srcset="data/local 1x, https://example.com/leak.webp 2x"></main>')],
+  ];
+
+  for (const [label, contaminated] of variants) {
+    assert.throws(() => validateHtml(contaminated), /external image source/, label);
+  }
+});
+
 test('validator requires approved tutorial URLs verbatim', async () => {
   await buildPage();
   const html = await readFile(outputPath, 'utf8');
@@ -95,6 +109,36 @@ test('validator checks forbidden copy in user-visible attributes', async () => {
   for (const [label, element] of variants) {
     const contaminated = html.replace('</main>', `${element}</main>`);
     assert.throws(() => validateHtml(contaminated), /visible implementation copy/, label);
+  }
+});
+
+test('validator checks form value and label attributes for visible copy', async () => {
+  await buildPage();
+  const html = await readFile(outputPath, 'utf8');
+  const variants = [
+    ['input value', '<input type="button" value="Base64">'],
+    ['option label', '<option label="交付格式"></option>'],
+    ['optgroup label', '<optgroup label="图片内联"></optgroup>'],
+  ];
+
+  for (const [label, element] of variants) {
+    const contaminated = html.replace('</main>', `${element}</main>`);
+    assert.throws(() => validateHtml(contaminated), /visible implementation copy/, label);
+  }
+});
+
+test('validator decodes numeric references before resource URL checks', async () => {
+  await buildPage();
+  const html = await readFile(outputPath, 'utf8');
+  const variants = [
+    ['decimal inline style', html.replace('<main>', '<main style="background:url(https&#58;//example.com/leak.png)">'), /external CSS resource/],
+    ['hex inline style', html.replace('<main>', '<main style="background:url(https&#x3a;//example.com/leak.png)">'), /external CSS resource/],
+    ['decimal poster', html.replace('</main>', '<video poster="https&#58;//example.com/leak.webp"></video></main>'), /external media source/],
+    ['hex poster', html.replace('</main>', '<video poster="https&#x3A;//example.com/leak.webp"></video></main>'), /external media source/],
+  ];
+
+  for (const [label, contaminated, expected] of variants) {
+    assert.throws(() => validateHtml(contaminated), expected, label);
   }
 });
 
