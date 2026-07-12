@@ -21,6 +21,37 @@ function extractAttributeValues(html, attributeName) {
   return [...html.matchAll(attributePattern)].map((match) => match[1] ?? match[2] ?? match[3]);
 }
 
+function extractSrcsetUrls(srcset) {
+  const urls = [];
+  let position = 0;
+
+  while (position < srcset.length) {
+    while (position < srcset.length && /[\t\n\f\r ,]/.test(srcset[position])) position++;
+    if (position >= srcset.length) break;
+
+    const urlStart = position;
+    while (position < srcset.length && !/[\t\n\f\r ]/.test(srcset[position])) position++;
+    let url = srcset.slice(urlStart, position);
+
+    if (url.endsWith(',')) {
+      url = url.replace(/,+$/, '');
+      if (url) urls.push(url);
+      continue;
+    }
+
+    if (url) urls.push(url);
+    let parentheses = 0;
+    while (position < srcset.length) {
+      const character = srcset[position++];
+      if (character === '(') parentheses++;
+      else if (character === ')' && parentheses > 0) parentheses--;
+      else if (character === ',' && parentheses === 0) break;
+    }
+  }
+
+  return urls;
+}
+
 export function extractVisibleText(html) {
   const visibleAttributes = [...html.matchAll(/\b(?:alt|title|aria-label|placeholder|value|label)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)]
     .map((match) => match[1] ?? match[2] ?? match[3]);
@@ -39,7 +70,9 @@ export function validateHtml(html) {
   assert.equal((html.match(/data:image\/webp;base64,/g) ?? []).length, 10, 'expected ten WebP Data URIs');
   assert.doesNotMatch(resourceHtml, /<img\b[^>]*\bsrc\s*=\s*(?:"(?!data:)[^"]*"|'(?!data:)[^']*'|(?!data:)[^\s"'=<>`]+)/i, 'external image source');
   for (const srcset of extractAttributeValues(resourceHtml, 'srcset')) {
-    assert.doesNotMatch(srcset, /(?:https?:)?\/\//i, 'external image source');
+    for (const url of extractSrcsetUrls(srcset)) {
+      assert.doesNotMatch(url, /^(?:https?:|\/\/)/i, 'external image source');
+    }
   }
   assert.doesNotMatch(resourceHtml, /<script\b[^>]*\bsrc\s*=/i, 'external script');
   assert.doesNotMatch(resourceHtml, /\b(?:src|poster)\s*=\s*(?:["']\s*(?:https?:)?\/\/|(?:https?:)?\/\/)/i, 'external media source');

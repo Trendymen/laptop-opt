@@ -58,6 +58,25 @@ test('validator rejects remote candidates anywhere in srcset attributes', async 
   }
 });
 
+test('validator allows real data URLs in srcset but rejects a later remote candidate', async () => {
+  await buildPage();
+  const html = await readFile(outputPath, 'utf8');
+  const dataUris = html.match(/data:image\/webp;base64,[A-Za-z0-9+/=]+/g) ?? [];
+  const dataUri = dataUris.find((candidate) => candidate.includes('//'));
+  assert.ok(dataUri, 'expected a real Data URI whose base64 payload contains //');
+
+  const sourceAttribute = `src="${dataUri}"`;
+  assert.ok(html.includes(sourceAttribute), 'expected the selected Data URI in an img src attribute');
+
+  const dataOnly = html.replace(sourceAttribute, `srcset="${dataUri} 1x"`);
+  assert.equal((dataOnly.match(/data:image\/webp;base64,/g) ?? []).length, 10);
+  assert.doesNotThrow(() => validateHtml(dataOnly));
+
+  const withRemote = html.replace(sourceAttribute, `srcset="${dataUri} 1x, https://example.com/leak.webp 2x"`);
+  assert.equal((withRemote.match(/data:image\/webp;base64,/g) ?? []).length, 10);
+  assert.throws(() => validateHtml(withRemote), /external image source/);
+});
+
 test('validator requires approved tutorial URLs verbatim', async () => {
   await buildPage();
   const html = await readFile(outputPath, 'utf8');
