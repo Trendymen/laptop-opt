@@ -3,11 +3,26 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 
+const approvedTutorialLinks = [
+  'https://www.bilibili.com/video/BV1yv78zQEnD/?share_source=copy_web&vd_source=91e679d463038976da1b6275f56aec3c&t=1355',
+  'https://www.bilibili.com/video/BV1mvFpzoEp6/?share_source=copy_web&vd_source=91e679d463038976da1b6275f56aec3c',
+];
+
+function decodeNumericCharacterReferences(value) {
+  return value.replace(/&#(?:x([0-9a-f]+)|([0-9]+));?/gi, (reference, hexadecimal, decimal) => {
+    const codePoint = Number.parseInt(hexadecimal ?? decimal, hexadecimal === undefined ? 10 : 16);
+    const isValid = codePoint <= 0x10ffff && !(codePoint >= 0xd800 && codePoint <= 0xdfff);
+    return isValid ? String.fromCodePoint(codePoint) : reference;
+  });
+}
+
 export function extractVisibleText(html) {
-  return html.replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  const visibleAttributes = [...html.matchAll(/\b(?:alt|title|aria-label|placeholder)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)]
+    .map((match) => match[1] ?? match[2] ?? match[3]);
+  const bodyText = html.replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ');
+    .replace(/<[^>]+>/g, ' ');
+  return decodeNumericCharacterReferences(`${bodyText} ${visibleAttributes.join(' ')}`).replace(/\s+/g, ' ');
 }
 
 export function validateHtml(html) {
@@ -16,19 +31,20 @@ export function validateHtml(html) {
     assert.ok(!visible.includes(phrase), `visible implementation copy: ${phrase}`);
   }
   assert.equal((html.match(/data:image\/webp;base64,/g) ?? []).length, 10, 'expected ten WebP Data URIs');
-  assert.doesNotMatch(html, /<img[^>]+src=["'](?!data:)/, 'external image source');
-  assert.doesNotMatch(html, /\b(?:src|poster)=["']https?:\/\//i, 'external media source');
-  assert.doesNotMatch(html, /<link[^>]+rel=["']stylesheet/, 'external stylesheet');
-  assert.doesNotMatch(html, /<script[^>]+src=/, 'external script');
-  const styleText = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map((match) => match[1]).join('\n');
-  assert.doesNotMatch(styleText, /(?:url\(|@import\s+)[^;)]*https?:\/\//i, 'external CSS resource');
-  const httpLinks = [...html.matchAll(/<a[^>]+href=["'](https?:\/\/[^"']+)/g)]
-    .map((match) => new URL(match[1].replaceAll('&amp;', '&')));
-  assert.equal(httpLinks.length, 2, 'expected exactly two external tutorial links');
-  assert.ok(httpLinks.every((url) => url.hostname === 'www.bilibili.com'), 'non-Bilibili external link');
-  assert.equal(httpLinks[0].pathname, '/video/BV1yv78zQEnD/');
-  assert.equal(httpLinks[0].searchParams.get('t'), '1355');
-  assert.equal(httpLinks[1].pathname, '/video/BV1mvFpzoEp6/');
+  assert.doesNotMatch(html, /<img\b[^>]*\bsrc\s*=\s*(?:"(?!data:)[^"]*"|'(?!data:)[^']*'|(?!data:)[^\s"'=<>`]+)/i, 'external image source');
+  assert.doesNotMatch(html, /<img\b[^>]*\bsrcset\s*=\s*(?:["']\s*(?:https?:)?\/\/|(?:https?:)?\/\/)/i, 'external image source');
+  assert.doesNotMatch(html, /<script\b[^>]*\bsrc\s*=/i, 'external script');
+  assert.doesNotMatch(html, /\b(?:src|poster)\s*=\s*(?:["']\s*(?:https?:)?\/\/|(?:https?:)?\/\/)/i, 'external media source');
+  assert.doesNotMatch(html, /<link\b[^>]*\brel\s*=\s*(?:"[^"]*\bstylesheet\b[^"]*"|'[^']*\bstylesheet\b[^']*'|stylesheet\b)/i, 'external stylesheet');
+  const styleText = [
+    ...[...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map((match) => match[1]),
+    ...[...html.matchAll(/\bstyle\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)]
+      .map((match) => match[1] ?? match[2] ?? match[3]),
+  ].join('\n');
+  assert.doesNotMatch(styleText, /(?:url\(\s*["']?\s*|@import\s+(?:url\(\s*)?["']?\s*)(?:https?:)?\/\//i, 'external CSS resource');
+  const tutorialLinks = [...html.matchAll(/<a\b[^>]*\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)]
+    .map((match) => (match[1] ?? match[2] ?? match[3]).replaceAll('&amp;', '&'));
+  assert.deepEqual(tutorialLinks, approvedTutorialLinks, 'expected exact approved tutorial links');
   return true;
 }
 

@@ -29,6 +29,75 @@ test('validator rejects remote CSS resources', async () => {
   assert.throws(() => validateHtml(contaminated), /external CSS resource/);
 });
 
+test('validator rejects remote resources in HTML attribute variants', async () => {
+  await buildPage();
+  const html = await readFile(outputPath, 'utf8');
+  const variants = [
+    ['img srcset', html.replace('<img ', '<img srcset=https://example.com/leak.webp '), /external image source/],
+    ['spaced script src', html.replace('<script>', '<script src = "https://example.com/leak.js">'), /external script/],
+    ['spaced stylesheet rel', html.replace('</head>', '<link rel = "stylesheet" href="https://example.com/leak.css"></head>'), /external stylesheet/],
+    ['inline style URL', html.replace('<main>', '<main style="background:url(https://example.com/leak.png)">'), /external CSS resource/],
+  ];
+
+  for (const [label, contaminated, expected] of variants) {
+    assert.throws(() => validateHtml(contaminated), expected, label);
+  }
+});
+
+test('validator requires approved tutorial URLs verbatim', async () => {
+  await buildPage();
+  const html = await readFile(outputPath, 'utf8');
+  const approved = 'https://www.bilibili.com/video/BV1yv78zQEnD/?share_source=copy_web&amp;vd_source=91e679d463038976da1b6275f56aec3c&amp;t=1355';
+  const variants = [
+    ['protocol', approved.replace('https://', 'http://')],
+    ['port', approved.replace('www.bilibili.com/', 'www.bilibili.com:443/')],
+    ['query', approved.replace('t=1355', 't=1356')],
+    ['fragment', `${approved}#changed`],
+  ];
+
+  for (const [label, href] of variants) {
+    const contaminated = html.replace(approved, href);
+    assert.throws(() => validateHtml(contaminated), /exact approved tutorial links/, label);
+  }
+});
+
+test('validator rejects an additional protocol-relative link', async () => {
+  await buildPage();
+  const html = await readFile(outputPath, 'utf8');
+  const contaminated = html.replace('</main>', '<a href="//evil.example/track">extra</a></main>');
+  assert.throws(() => validateHtml(contaminated), /exact approved tutorial links/);
+});
+
+test('validator decodes numeric character references in visible copy', async () => {
+  await buildPage();
+  const html = await readFile(outputPath, 'utf8');
+  const variants = [
+    ['decimal', '<p>单文件 &#72;TML</p>'],
+    ['hexadecimal', '<p>单文件 &#x48;TML</p>'],
+  ];
+
+  for (const [label, copy] of variants) {
+    const contaminated = html.replace('</main>', `${copy}</main>`);
+    assert.throws(() => validateHtml(contaminated), /visible implementation copy/, label);
+  }
+});
+
+test('validator checks forbidden copy in user-visible attributes', async () => {
+  await buildPage();
+  const html = await readFile(outputPath, 'utf8');
+  const variants = [
+    ['alt', '<img alt="交付格式">'],
+    ['title', '<span title="图片内联"></span>'],
+    ['aria-label', '<button aria-label="离线查看"></button>'],
+    ['placeholder', '<input placeholder="Base64">'],
+  ];
+
+  for (const [label, element] of variants) {
+    const contaminated = html.replace('</main>', `${element}</main>`);
+    assert.throws(() => validateHtml(contaminated), /visible implementation copy/, label);
+  }
+});
+
 test('validator accepts the generated page', async () => {
   await buildPage();
   const html = await readFile(outputPath, 'utf8');
