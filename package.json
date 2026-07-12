@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node --test --test-concurrency=1 tests/assets.test.mjs",
+    "test": "node --test --test-concurrency=1 tests/assets.test.mjs tests/image-pipeline.test.mjs",
     "verify": "npm test && npm run build && node scripts/validate-html.mjs",
     "serve": "node scripts/serve.mjs"
   },
