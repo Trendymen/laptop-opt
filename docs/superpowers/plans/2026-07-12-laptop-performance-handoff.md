@@ -485,6 +485,7 @@ test('rendered copy matches the approved device handoff facts', async () => {
   const html = await readFile(outputPath, 'utf8');
   const text = visibleText(html);
   const required = [
+    '机械革命蛟龙 16 Pro', 'Ryzen 9 8945HX', 'RTX 5070 Ti', '游戏性能与散热平衡',
     'CCD1 已关闭', 'CPU 睿频已关闭', '接通电源 5000 MHz',
     'SPL 65W', 'sPPT 85W', 'fPPT 85W', '控制极限 CPU 温度',
     '独显直连', '高性能电源模式保持关闭', 'All Core Offset -20',
@@ -492,6 +493,7 @@ test('rendered copy matches the approved device handoff facts', async () => {
     'ZenTimings = 当前 Windows 实际运行结果',
     'UMAF = 已记录字段的局部参数入口和回退对照',
     '约 80MB 的 UMAF 分区不可删除', '持续按 F2',
+    'BIOS、负压和超频调整可能造成不稳定', '修改前保留当前值截图',
     '接通电源 5000 MHz → 5200 MHz', '85–87°C',
     'MCHOSE HUB', '小飞机（MSI Afterburner）', 'HWiNFO 仅传感器模式',
     'AIDA64', 'TM5', '先询问 AI 再使用',
@@ -528,7 +530,7 @@ Use this exact section order and copy in `src/index.template.html`; retain the e
   <div class="page-shell">
     <header class="topbar">
       <strong>MECHREVO / HANDOFF 01</strong>
-      <div><span>设备：蛟龙 16 Pro</span><span>用途：稳定基线与异常恢复</span><b>记录于 2026-07-12 · 交接基线已稳定运行</b></div>
+      <div><span>设备：机械革命蛟龙 16 Pro · Ryzen 9 8945HX · RTX 5070 Ti</span><span>用途：游戏性能与散热平衡</span><b>记录于 2026-07-12 · 交接基线已稳定运行</b></div>
     </header>
 
     <section class="hero" aria-labelledby="page-title">
@@ -546,7 +548,7 @@ Use this exact section order and copy in `src/index.template.html`; retain the e
       </dl>
     </section>
 
-    <aside class="critical-note"><strong>先看这里</strong><span>约 80MB 的 UMAF 分区不可删除；不确定参数含义时，不要一次修改多项。</span></aside>
+    <aside class="critical-note"><strong>先看这里</strong><span>约 80MB 的 UMAF 分区不可删除或格式化；BIOS、负压和超频调整可能造成不稳定。修改前保留当前值截图，不确定参数含义时不要一次修改多项。</span></aside>
 
     <main>
       <section class="chapter" id="baseline" data-reveal>
@@ -930,6 +932,7 @@ git commit -m "feat: add motion and image zoom"
 - Modify: `dist/laptop-performance-handoff.html`
 - Create: `output/playwright/full-1440.png`
 - Create: `output/playwright/full-1920.png`
+- Create: `output/playwright/full-mobile.png`
 - Create: `output/playwright/memory-stable-full.png`
 - Create: `output/playwright/umaf-full.png`
 
@@ -1071,7 +1074,17 @@ Expected: exactly 10 source-backed images load, both tutorial links exactly matc
 
 Expected: `scrollingElement` is `HTML`, `internalScrollers` is `0`, `loadedImages` is `10`, and the same computed type-size/contrast contract passes at 1920px.
 
-- [ ] **Step 9: Verify the HTML works directly from a unique empty folder with networking disabled**
+- [ ] **Step 9: Verify the responsive layout at a 390px mobile viewport**
+
+```powershell
+& 'E:\Git\bin\bash.exe' '/c/Users/lz199/.codex/skills/playwright/scripts/playwright_cli.sh' resize 390 844
+& 'E:\Git\bin\bash.exe' '/c/Users/lz199/.codex/skills/playwright/scripts/playwright_cli.sh' run-code "const result = await page.evaluate(() => { const images = [...document.querySelectorAll('img[src]')]; const fontChecks = [['body', 16], ['.hero-metrics dd', 28], ['.hero-metrics dt', 14], ['.baseline-grid p', 14], ['.tutorial p', 14], ['.tools-list p', 14], ['small', 12]].flatMap(([selector, minimum]) => [...document.querySelectorAll(selector)].filter((element) => parseFloat(getComputedStyle(element).fontSize) < minimum).map((element) => selector + ': ' + getComputedStyle(element).fontSize)); return { scrollingElement: document.scrollingElement?.tagName, horizontalOverflow: document.documentElement.scrollWidth > innerWidth, internalScrollers: [...document.querySelectorAll('*')].filter((element) => { const style = getComputedStyle(element); return /(auto|scroll)/.test(style.overflowY) && element.scrollHeight > element.clientHeight; }).length, imageCount: images.length, loadedImages: images.filter((image) => image.complete && image.naturalWidth > 0).length, fontChecks }; }); if (result.scrollingElement !== 'HTML' || result.horizontalOverflow || result.internalScrollers !== 0 || result.imageCount !== 10 || result.loadedImages !== 10 || result.fontChecks.length) throw new Error(JSON.stringify(result)); await page.screenshot({path: 'output/playwright/full-mobile.png', fullPage: true});"
+& 'E:\Git\bin\bash.exe' '/c/Users/lz199/.codex/skills/playwright/scripts/playwright_cli.sh' resize 1440 900
+```
+
+Expected: the mobile page has no horizontal overflow or inner scrolling, all 10 images load, the approved minimum type scale still holds, and the full-page mobile screenshot is readable.
+
+- [ ] **Step 10: Verify the HTML works directly from a unique empty folder with networking disabled**
 
 ```powershell
 $offline = Join-Path $env:TEMP ('laptop-handoff-offline-check-' + [Guid]::NewGuid().ToString('N'))
@@ -1089,7 +1102,7 @@ Remove-Item -LiteralPath $resolvedOffline -Recurse -Force
 
 Expected: `navigator.onLine` is false, the copied file opens with exactly 10/10 images and no console errors or warnings, and no network is needed for page resources. The two Bilibili links remain visible but are not opened.
 
-- [ ] **Step 10: Open the stable-memory and both UMAF images through the real keyboard lightbox flow**
+- [ ] **Step 11: Open the stable-memory and both UMAF images through the real keyboard lightbox flow**
 
 ```powershell
 & 'E:\Git\bin\bash.exe' '/c/Users/lz199/.codex/skills/playwright/scripts/playwright_cli.sh' run-code "const cases = [{ alt: 'ZenTimings 显示的当前稳定内存参数', width: 610, height: 844, shot: 'output/playwright/memory-stable-full.png' }, { alt: 'UMAF DDR SPD Timing 已记录字段', width: 3072, height: 4096, shot: 'output/playwright/umaf-full.png' }, { alt: 'UMAF DDR Non-SPD Timing 已记录字段', width: 3072, height: 4096 }]; for (const item of cases) { const locator = page.getByRole('button', { name: item.alt + '，打开完整大图' }); await locator.focus(); await page.keyboard.press('Space'); await page.waitForFunction(() => { const dialog = document.querySelector('#image-dialog'); const full = dialog?.querySelector('img'); return dialog?.open && full?.complete && full.naturalWidth > 0 && full.naturalHeight > 0; }); const dimensions = await page.locator('#image-dialog img').evaluate((full) => ({ width: full.naturalWidth, height: full.naturalHeight })); if (dimensions.width !== item.width || dimensions.height !== item.height) throw new Error(item.alt + ': ' + JSON.stringify(dimensions)); if (item.shot) await page.screenshot({ path: item.shot }); await page.keyboard.press('Escape'); await page.waitForFunction(() => !document.querySelector('#image-dialog')?.open); }"
@@ -1097,20 +1110,21 @@ Expected: `navigator.onLine` is false, the copied file opens with exactly 10/10 
 
 Expected: Space opens each image, both UMAF images resolve to the complete 3072 × 4096 source, ZenTimings resolves to 610 × 844, screenshots are saved for visual review, and Escape closes the dialog each time.
 
-- [ ] **Step 11: Visually inspect both full-page screenshots and the full-size memory screenshots**
+- [ ] **Step 12: Visually inspect desktop, mobile, and full-size memory screenshots**
 
 Use the local image viewer on:
 
 ```text
 output/playwright/full-1440.png
 output/playwright/full-1920.png
+output/playwright/full-mobile.png
 output/playwright/memory-stable-full.png
 output/playwright/umaf-full.png
 ```
 
 Acceptance points: no 12px-or-smaller descriptive copy; green text never sits on white imagery; the white hero image ends before the dark metric bar; ZenTimings is visibly the current stable result; UMAF is visibly a partial recovery reference; Bilibili titles and BV numbers are readable; no user-facing build terminology appears.
 
-- [ ] **Step 12: Stop the server and Playwright browser**
+- [ ] **Step 13: Stop the server and Playwright browser**
 
 Stop the tracked `npm run serve` session and run:
 
@@ -1118,11 +1132,11 @@ Stop the tracked `npm run serve` session and run:
 & 'E:\Git\bin\bash.exe' '/c/Users/lz199/.codex/skills/playwright/scripts/playwright_cli.sh' close
 ```
 
-- [ ] **Step 13: Attempt workspace diagnostics**
+- [ ] **Step 14: Attempt workspace diagnostics**
 
 Use `vscode_mcp_server` on the modified `.mjs`, `.js`, `.css`, and HTML source files. If it is unavailable in the session, record that diagnostics were skipped because the MCP server/tool was not available; do not claim diagnostics passed.
 
-- [ ] **Step 14: Final verification and commit**
+- [ ] **Step 15: Final verification and commit**
 
 Run:
 
