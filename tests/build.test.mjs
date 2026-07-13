@@ -1,26 +1,64 @@
 import assert from 'node:assert/strict';
-import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { basename, resolve } from 'node:path';
 import test from 'node:test';
 import { buildPage, outputPath } from '../scripts/build.mjs';
 import { validateHtml } from '../scripts/validate-html.mjs';
 
+async function readOptional(file) {
+  try {
+    return await readFile(file);
+  } catch (error) {
+    if (error.code === 'ENOENT') return undefined;
+    throw error;
+  }
+}
+
 test('build emits index.html as the only canonical standalone artifact', async () => {
+  const distPath = resolve('dist');
   const legacyOutputPath = resolve('dist/laptop-performance-handoff.html');
-  await rm('dist', { recursive: true, force: true });
-  await mkdir('dist', { recursive: true });
-  await writeFile(legacyOutputPath, 'legacy artifact', 'utf8');
+  const previousOutput = await readOptional(outputPath);
+  const previousLegacyOutput = await readOptional(legacyOutputPath);
+  const distExisted = await access(distPath).then(() => true, (error) => {
+    if (error.code === 'ENOENT') return false;
+    throw error;
+  });
+  let unrelatedDirectory;
 
-  await buildPage();
+  try {
+    await mkdir(distPath, { recursive: true });
+    unrelatedDirectory = await mkdtemp(resolve(distPath, 'test-unrelated-'));
+    const unrelatedOutputPath = resolve(unrelatedDirectory, 'artifact.txt');
+    await rm(outputPath, { force: true });
+    await rm(legacyOutputPath, { force: true });
+    await writeFile(legacyOutputPath, 'legacy artifact', 'utf8');
+    await writeFile(unrelatedOutputPath, 'unrelated artifact', 'utf8');
 
-  assert.equal(basename(outputPath), 'index.html');
-  await assert.rejects(access(legacyOutputPath), { code: 'ENOENT' });
-  const html = await readFile(outputPath, 'utf8');
-  assert.equal((html.match(/data:image\/webp;base64,/g) ?? []).length, 10);
-  assert.doesNotMatch(html, /<img[^>]+src=["'](?!data:)/);
-  assert.doesNotMatch(html, /<link[^>]+rel=["']stylesheet/);
-  assert.doesNotMatch(html, /<script[^>]+src=/);
-  assert.doesNotMatch(html, /\{\{[^}]+\}\}/);
+    await buildPage();
+
+    assert.equal(basename(outputPath), 'index.html');
+    await assert.rejects(access(legacyOutputPath), { code: 'ENOENT' });
+    assert.equal(await readFile(unrelatedOutputPath, 'utf8'), 'unrelated artifact');
+    const html = await readFile(outputPath, 'utf8');
+    assert.equal((html.match(/data:image\/webp;base64,/g) ?? []).length, 10);
+    assert.doesNotMatch(html, /<img[^>]+src=["'](?!data:)/);
+    assert.doesNotMatch(html, /<link[^>]+rel=["']stylesheet/);
+    assert.doesNotMatch(html, /<script[^>]+src=/);
+    assert.doesNotMatch(html, /\{\{[^}]+\}\}/);
+  } finally {
+    if (unrelatedDirectory) await rm(unrelatedDirectory, { recursive: true, force: true });
+    if (previousOutput !== undefined || previousLegacyOutput !== undefined) {
+      await mkdir(distPath, { recursive: true });
+    }
+
+    if (previousOutput === undefined) await rm(outputPath, { force: true });
+    else await writeFile(outputPath, previousOutput);
+
+    if (previousLegacyOutput === undefined) await rm(legacyOutputPath, { force: true });
+    else await writeFile(legacyOutputPath, previousLegacyOutput);
+
+    if (!distExisted) await rm(distPath, { recursive: true, force: true });
+  }
 });
 
 test('validator rejects visible implementation copy', async () => {
