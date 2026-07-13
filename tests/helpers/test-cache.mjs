@@ -1,3 +1,3 @@
-import { resolve } from 'node:path';
+import { defaultCacheDir } from '../../scripts/build.mjs';
 
-export const integrationCacheDir = resolve('.cache/image-pipeline-tests');
+export const integrationCacheDir = defaultCacheDir;

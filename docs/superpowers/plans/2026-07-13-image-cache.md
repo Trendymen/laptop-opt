@@ -459,17 +459,21 @@ git commit -m "feat: reuse verified image conversions"
 
 ---
 
-### Task 3: Reuse cached assets and generated HTML across tests
+### Task 3: Reuse cached assets and generated HTML across tests and builds
 
 **Files:**
 - Create: `tests/helpers/test-cache.mjs`
 - Modify: `scripts/build.mjs`
+- Modify: `tests/image-cache.test.mjs`
 - Modify: `tests/build.test.mjs`
 - Modify: `tests/content.test.mjs`
 - Modify: `tests/image-pipeline.test.mjs`
+- Modify: `docs/superpowers/specs/2026-07-13-build-cache-design.md`
+- Modify: `docs/superpowers/plans/2026-07-13-image-cache.md`
 
 **Interfaces:**
 - Produces: `integrationCacheDir: string`
+- Produces: `defaultCacheDir: string`
 - Produces: `buildPage({ cacheDir }?): Promise<Array<ConversionResult & { cacheHit: boolean }>>`
 
 - [ ] **Step 1: Add the shared test cache path and a failing build wiring contract**
@@ -477,9 +481,9 @@ git commit -m "feat: reuse verified image conversions"
 Create `tests/helpers/test-cache.mjs`:
 
 ```js
-import { resolve } from 'node:path';
+import { defaultCacheDir } from '../../scripts/build.mjs';
 
-export const integrationCacheDir = resolve('.cache/image-pipeline-tests');
+export const integrationCacheDir = defaultCacheDir;
 ```
 
 Append this fast source contract to `tests/image-cache.test.mjs`:
@@ -502,11 +506,13 @@ Expected: FAIL because `buildPage()` has no options parameter and calls `convert
 
 - [ ] **Step 2: Pass the cache directory through `buildPage`**
 
-Change the function declaration in `scripts/build.mjs` to:
+Expose the production cache path and use it as the function default in `scripts/build.mjs`:
 
 ```js
+export const defaultCacheDir = resolve(root, '.cache/image-pipeline');
+
 export async function buildPage({
-  cacheDir = resolve(root, '.cache/image-pipeline'),
+  cacheDir = defaultCacheDir,
 } = {}) {
 }
 ```
@@ -584,17 +590,22 @@ Expected: all tests, build and standalone validator PASS; the final HTML still c
 Run:
 
 ```bash
-rm -rf .cache/image-pipeline-tests
+node --input-type=module -e "import {rm} from 'node:fs/promises'; await rm('.cache/image-pipeline', {recursive: true, force: true})"
+/usr/bin/time -p npm run build
 /usr/bin/time -p npm test
+/usr/bin/time -p npm run build
+node --input-type=module -e "import {rm} from 'node:fs/promises'; await rm('.cache/image-pipeline', {recursive: true, force: true})"
 /usr/bin/time -p npm test
+/usr/bin/time -p npm run build
 node --test --test-concurrency=1 --test-name-pattern='validator rejects visible implementation copy' tests/build.test.mjs
 git status --short
 ```
 
 Expected on this machine:
 
-- cold test run performs real conversions and remains near the existing 13-second conversion floor;
-- second test run is below 5 seconds;
+- cold build performs real conversions and remains near the existing 13-second conversion floor;
+- the immediately following test run and build both reuse that cache and remain below 5 seconds;
+- a cold test followed by a build also proves the reverse reuse direction;
 - focused warm validator is below 1 second;
 - only ignored `.cache` files are created.
 
@@ -603,7 +614,7 @@ Do not encode wall-clock thresholds as automated assertions.
 - [ ] **Step 6: Commit test reuse and performance integration**
 
 ```bash
-git add scripts/build.mjs tests/helpers/test-cache.mjs tests/build.test.mjs tests/content.test.mjs tests/image-pipeline.test.mjs
+git add scripts/build.mjs tests/helpers/test-cache.mjs tests/image-cache.test.mjs tests/build.test.mjs tests/content.test.mjs tests/image-pipeline.test.mjs docs/superpowers/specs/2026-07-13-build-cache-design.md docs/superpowers/plans/2026-07-13-image-cache.md
 git commit -m "test: reuse cached page assets"
 ```
 

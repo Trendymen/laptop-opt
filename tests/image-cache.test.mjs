@@ -38,13 +38,16 @@ test('cache key is stable and invalidates every conversion input', () => {
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import {
   cachePathFor,
   readCacheEntry,
   writeCacheEntryAtomic,
 } from '../scripts/image-cache.mjs';
+import { defaultCacheDir } from '../scripts/build.mjs';
 import { convertAsset } from '../scripts/image-pipeline.mjs';
+import { integrationCacheDir } from './helpers/test-cache.mjs';
 
 const cachedResult = {
   id: 'asset-a',
@@ -139,4 +142,10 @@ test('buildPage forwards its configured cache directory', async () => {
   const source = await readFile('scripts/build.mjs', 'utf8');
   assert.match(source, /export async function buildPage\(\{[\s\S]*?cacheDir[\s\S]*?\}\s*=\s*\{\}\)/);
   assert.match(source, /convertAsset\(asset, root, \{ cacheDir \}\)/);
+});
+
+test('production builds and integration tests share the same persistent cache', () => {
+  const projectRoot = fileURLToPath(new URL('..', import.meta.url));
+  assert.equal(defaultCacheDir, resolve(projectRoot, '.cache/image-pipeline'));
+  assert.equal(integrationCacheDir, defaultCacheDir);
 });

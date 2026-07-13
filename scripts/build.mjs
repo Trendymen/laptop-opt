@@ -7,9 +7,10 @@ import { convertAsset } from './image-pipeline.mjs';
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const legacyOutputPath = resolve(root, 'dist/laptop-performance-handoff.html');
 export const outputPath = resolve(root, 'dist/index.html');
+export const defaultCacheDir = resolve(root, '.cache/image-pipeline');
 
 export async function buildPage({
-  cacheDir = resolve(root, '.cache/image-pipeline'),
+  cacheDir = defaultCacheDir,
 } = {}) {
   let html = await readFile(resolve(root, 'src/index.template.html'), 'utf8');
   const styles = await readFile(resolve(root, 'src/styles.css'), 'utf8');
