@@ -82,13 +82,15 @@ figcaption { padding-top: .8rem; color: var(--muted); font-size: var(--font-note
 .timing-value-note { margin: 2rem 0; padding: 1.5rem; border: 1px solid var(--line); background: #11151a; }
 .timing-value-note strong { color: var(--acid); }
 .timing-value-note p { margin: .8rem 0 0; color: var(--muted); }
-.timing-values { width: 100%; margin-top: 1.5rem; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.timing-values { width: 100%; max-width: 34rem; table-layout: fixed; margin-top: 1.5rem; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 .timing-values caption { padding: 0 0 .6rem; color: var(--text); font-size: 1rem; font-weight: 800; text-align: left; }
 .timing-values th, .timing-values td { padding: .7rem .85rem; border: 1px solid var(--line); text-align: left; }
 .timing-values thead th { color: var(--muted); font-size: var(--font-note); }
 .timing-values tbody th { color: var(--text); font-weight: 700; }
-.timing-values tbody td:first-child { width: 4.5rem; color: var(--muted); }
-.timing-values tbody td:last-child { width: 9rem; }
+.timing-values th:first-child, .timing-values td:first-child { width: 18%; }
+.timing-values th:nth-child(2), .timing-values td:nth-child(2) { width: 54%; }
+.timing-values th:last-child, .timing-values td:last-child { width: 28%; }
+.timing-values tbody td:first-child { color: var(--muted); }
 .timing-values code { color: var(--acid); font-family: "SFMono-Regular", Consolas, monospace; font-size: 1rem; font-weight: 800; }
 .umaf-stack { display: grid; grid-template-columns: 1fr; gap: 1.75rem; margin-top: 2rem; }
 .umaf-image { width: 100%; height: auto; object-fit: contain; border: 1px solid var(--line); }

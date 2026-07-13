@@ -275,7 +275,10 @@ test('evidence images stack vertically at their original ratios and the mobile h
   assert.match(css, /\.tutorial-link\s*\{[^}]*display:\s*flex;[^}]*background:\s*var\(--acid\)/);
   assert.match(css, /\.recovery-paths\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:/);
   assert.match(css, /\.recovery-path--default\s*\{[^}]*border-left:\s*4px solid var\(--danger\)/);
-  assert.match(css, /\.timing-values\s*\{[^}]*width:\s*100%;[^}]*border-collapse:\s*collapse/);
+  assert.match(css, /\.timing-values\s*\{[^}]*width:\s*100%;[^}]*max-width:\s*34rem;[^}]*table-layout:\s*fixed;[^}]*border-collapse:\s*collapse/);
+  assert.match(css, /\.timing-values th:first-child,\s*\.timing-values td:first-child\s*\{[^}]*width:\s*18%/);
+  assert.match(css, /\.timing-values th:nth-child\(2\),\s*\.timing-values td:nth-child\(2\)\s*\{[^}]*width:\s*54%/);
+  assert.match(css, /\.timing-values th:last-child,\s*\.timing-values td:last-child\s*\{[^}]*width:\s*28%/);
   assert.match(css, /\.timing-values caption\s*\{[^}]*text-align:\s*left/);
   assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.hero-media\s*\{\s*height:\s*auto;\s*\}[\s\S]*?\.hero-media img\s*\{[^}]*height:\s*auto;[^}]*object-fit:\s*contain/);
 
