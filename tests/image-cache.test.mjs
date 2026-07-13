@@ -35,14 +35,16 @@ test('cache key is stable and invalidates every conversion input', () => {
   }
 });
 
-import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+import sharp from 'sharp';
 import {
   cachePathFor,
   readCacheEntry,
   writeCacheEntryAtomic,
 } from '../scripts/image-cache.mjs';
+import { convertAsset } from '../scripts/image-pipeline.mjs';
 
 const cachedResult = {
   id: 'asset-a',
@@ -82,5 +84,53 @@ test('cache storage validates records and recovers from corruption', async () =>
     assert.doesNotThrow(() => JSON.parse(stored));
   } finally {
     await rm(cacheDir, { recursive: true, force: true });
+  }
+});
+
+test('convertAsset reuses verified output and invalidates changed source pixels', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'laptop-opt-convert-cache-'));
+  const sourceDir = resolve(root, 'assets/source');
+  const sourcePath = resolve(sourceDir, 'tiny.png');
+  const cacheDir = resolve(root, '.cache/image-pipeline');
+  const asset = {
+    id: 'tiny',
+    source: 'tiny.png',
+    preset: 'text',
+    webPMode: 'lossless',
+  };
+
+  try {
+    await mkdir(sourceDir, { recursive: true });
+    await sharp({
+      create: {
+        width: 2,
+        height: 2,
+        channels: 4,
+        background: { r: 20, g: 40, b: 60, alpha: 1 },
+      },
+    }).png().toFile(sourcePath);
+
+    const first = await convertAsset(asset, root, { cacheDir });
+    const second = await convertAsset(asset, root, { cacheDir });
+    assert.equal(first.cacheHit, false);
+    assert.equal(second.cacheHit, true);
+    assert.deepEqual(
+      { ...second, cacheHit: false },
+      first,
+    );
+
+    await sharp({
+      create: {
+        width: 2,
+        height: 2,
+        channels: 4,
+        background: { r: 90, g: 40, b: 60, alpha: 1 },
+      },
+    }).png().toFile(sourcePath);
+    const changed = await convertAsset(asset, root, { cacheDir });
+    assert.equal(changed.cacheHit, false);
+    assert.notEqual(changed.dataUri, first.dataUri);
+  } finally {
+    await rm(root, { recursive: true, force: true });
   }
 });
