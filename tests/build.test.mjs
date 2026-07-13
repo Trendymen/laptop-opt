@@ -4,6 +4,15 @@ import { basename, resolve } from 'node:path';
 import test from 'node:test';
 import { buildPage, outputPath } from '../scripts/build.mjs';
 import { validateHtml } from '../scripts/validate-html.mjs';
+import { integrationCacheDir } from './helpers/test-cache.mjs';
+
+let generatedHtmlPromise;
+
+function getGeneratedHtml() {
+  generatedHtmlPromise ??= buildPage({ cacheDir: integrationCacheDir })
+    .then(() => readFile(outputPath, 'utf8'));
+  return generatedHtmlPromise;
+}
 
 async function readOptional(file) {
   try {
@@ -34,7 +43,8 @@ test('build emits index.html as the only canonical standalone artifact', async (
     await writeFile(legacyOutputPath, 'legacy artifact', 'utf8');
     await writeFile(unrelatedOutputPath, 'unrelated artifact', 'utf8');
 
-    await buildPage();
+    const report = await buildPage({ cacheDir: integrationCacheDir });
+    assert.equal(report.length, 10);
 
     assert.equal(basename(outputPath), 'index.html');
     await assert.rejects(access(legacyOutputPath), { code: 'ENOENT' });
@@ -62,22 +72,19 @@ test('build emits index.html as the only canonical standalone artifact', async (
 });
 
 test('validator rejects visible implementation copy', async () => {
-  await buildPage();
-  const html = await readFile(outputPath, 'utf8');
+  const html = await getGeneratedHtml();
   const contaminated = html.replace('</main>', '<p>交付格式：单文件 HTML</p></main>');
   assert.throws(() => validateHtml(contaminated), /visible implementation copy/);
 });
 
 test('validator rejects remote CSS resources', async () => {
-  await buildPage();
-  const html = await readFile(outputPath, 'utf8');
+  const html = await getGeneratedHtml();
   const contaminated = html.replace('</style>', '.leak{background:url(https://example.com/leak.png)}</style>');
   assert.throws(() => validateHtml(contaminated), /external CSS resource/);
 });
 
 test('validator rejects remote resources in HTML attribute variants', async () => {
-  await buildPage();
-  const html = await readFile(outputPath, 'utf8');
+  const html = await getGeneratedHtml();
   const variants = [
     ['img srcset', html.replace('<img ', '<img srcset=https://example.com/leak.webp '), /external image source/],
     ['spaced script src', html.replace('<script>', '<script src = "https://example.com/leak.js">'), /external script/],
@@ -91,8 +98,7 @@ test('validator rejects remote resources in HTML attribute variants', async () =
 });
 
 test('validator rejects remote candidates anywhere in srcset attributes', async () => {
-  await buildPage();
-  const html = await readFile(outputPath, 'utf8');
+  const html = await getGeneratedHtml();
   const variants = [
     ['source srcset', html.replace('</main>', '<source srcset=https://example.com/leak.webp></main>')],
     ['later img candidate', html.replace('<img ', '<img srcset="data/local 1x, https://example.com/leak.webp 2x" ')],
@@ -105,8 +111,7 @@ test('validator rejects remote candidates anywhere in srcset attributes', async 
 });
 
 test('validator allows real data URLs in srcset but rejects a later remote candidate', async () => {
-  await buildPage();
-  const html = await readFile(outputPath, 'utf8');
+  const html = await getGeneratedHtml();
   const dataUris = html.match(/data:image\/webp;base64,[A-Za-z0-9+/=]+/g) ?? [];
   const dataUri = dataUris.find((candidate) => candidate.includes('//'));
   assert.ok(dataUri, 'expected a real Data URI whose base64 payload contains //');
@@ -124,8 +129,7 @@ test('validator allows real data URLs in srcset but rejects a later remote candi
 });
 
 test('validator requires approved tutorial URLs verbatim', async () => {
-  await buildPage();
-  const html = await readFile(outputPath, 'utf8');
+  const html = await getGeneratedHtml();
   const approved = 'https://www.bilibili.com/video/BV1yv78zQEnD/?share_source=copy_web&amp;vd_source=91e679d463038976da1b6275f56aec3c&amp;t=1355';
   const variants = [
     ['protocol', approved.replace('https://', 'http://')],
@@ -141,15 +145,13 @@ test('validator requires approved tutorial URLs verbatim', async () => {
 });
 
 test('validator rejects an additional protocol-relative link', async () => {
-  await buildPage();
-  const html = await readFile(outputPath, 'utf8');
+  const html = await getGeneratedHtml();
   const contaminated = html.replace('</main>', '<a href="//evil.example/track">extra</a></main>');
   assert.throws(() => validateHtml(contaminated), /exact approved tutorial links/);
 });
 
 test('validator decodes numeric character references in visible copy', async () => {
-  await buildPage();
-  const html = await readFile(outputPath, 'utf8');
+  const html = await getGeneratedHtml();
   const variants = [
     ['decimal', '<p>单文件 &#72;TML</p>'],
     ['hexadecimal', '<p>单文件 &#x48;TML</p>'],
@@ -162,8 +164,7 @@ test('validator decodes numeric character references in visible copy', async () 
 });
 
 test('validator checks forbidden copy in user-visible attributes', async () => {
-  await buildPage();
-  const html = await readFile(outputPath, 'utf8');
+  const html = await getGeneratedHtml();
   const variants = [
     ['alt', '<img alt="交付格式">'],
     ['title', '<span title="图片内联"></span>'],
@@ -178,8 +179,7 @@ test('validator checks forbidden copy in user-visible attributes', async () => {
 });
 
 test('validator checks form value and label attributes for visible copy', async () => {
-  await buildPage();
-  const html = await readFile(outputPath, 'utf8');
+  const html = await getGeneratedHtml();
   const variants = [
     ['input value', '<input type="button" value="Base64">'],
     ['option label', '<option label="交付格式"></option>'],
@@ -193,8 +193,7 @@ test('validator checks form value and label attributes for visible copy', async 
 });
 
 test('validator decodes numeric references before resource URL checks', async () => {
-  await buildPage();
-  const html = await readFile(outputPath, 'utf8');
+  const html = await getGeneratedHtml();
   const variants = [
     ['decimal inline style', html.replace('<main>', '<main style="background:url(https&#58;//example.com/leak.png)">'), /external CSS resource/],
     ['hex inline style', html.replace('<main>', '<main style="background:url(https&#x3a;//example.com/leak.png)">'), /external CSS resource/],
@@ -208,7 +207,6 @@ test('validator decodes numeric references before resource URL checks', async ()
 });
 
 test('validator accepts the generated page', async () => {
-  await buildPage();
-  const html = await readFile(outputPath, 'utf8');
+  const html = await getGeneratedHtml();
   assert.doesNotThrow(() => validateHtml(html));
 });

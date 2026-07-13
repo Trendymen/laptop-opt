@@ -134,3 +134,9 @@ test('convertAsset reuses verified output and invalidates changed source pixels'
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test('buildPage forwards its configured cache directory', async () => {
+  const source = await readFile('scripts/build.mjs', 'utf8');
+  assert.match(source, /export async function buildPage\(\{[\s\S]*?cacheDir[\s\S]*?\}\s*=\s*\{\}\)/);
+  assert.match(source, /convertAsset\(asset, root, \{ cacheDir \}\)/);
+});

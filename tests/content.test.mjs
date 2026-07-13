@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { buildPage, outputPath } from '../scripts/build.mjs';
+import { integrationCacheDir } from './helpers/test-cache.mjs';
 
 function visibleText(html) {
   return html
@@ -12,7 +13,7 @@ function visibleText(html) {
 }
 
 test('rendered copy matches the approved device handoff facts', async () => {
-  await buildPage();
+  await buildPage({ cacheDir: integrationCacheDir });
   const html = await readFile(outputPath, 'utf8');
   const text = visibleText(html);
   const required = [

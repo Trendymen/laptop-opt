@@ -8,7 +8,9 @@ const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const legacyOutputPath = resolve(root, 'dist/laptop-performance-handoff.html');
 export const outputPath = resolve(root, 'dist/index.html');
 
-export async function buildPage() {
+export async function buildPage({
+  cacheDir = resolve(root, '.cache/image-pipeline'),
+} = {}) {
   let html = await readFile(resolve(root, 'src/index.template.html'), 'utf8');
   const styles = await readFile(resolve(root, 'src/styles.css'), 'utf8');
   const captureBootstrap = await readFile(resolve(root, 'src/capture-bootstrap.js'), 'utf8');
@@ -21,7 +23,7 @@ export async function buildPage() {
 
   const report = [];
   for (const asset of assets) {
-    const converted = await convertAsset(asset, root);
+    const converted = await convertAsset(asset, root, { cacheDir });
     html = html.replaceAll(`{{asset:${asset.id}}}`, converted.dataUri);
     report.push(converted);
   }

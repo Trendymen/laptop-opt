@@ -2,11 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { assets } from '../src/assets.mjs';
 import { convertAsset } from '../scripts/image-pipeline.mjs';
+import { integrationCacheDir } from './helpers/test-cache.mjs';
 
 for (const id of ['device-hero', 'uxtu-undervolt', 'memory-stable']) {
   test(`${id} converts to pixel-identical WebP`, async () => {
     const asset = assets.find((candidate) => candidate.id === id);
-    const result = await convertAsset(asset);
+    const result = await convertAsset(asset, process.cwd(), {
+      cacheDir: integrationCacheDir,
+    });
     assert.equal(result.mimeType, 'image/webp');
     assert.equal(result.width, result.sourceWidth);
     assert.equal(result.height, result.sourceHeight);
