@@ -334,8 +334,11 @@ export async function captureScreenshots() {
     }
     return { serverUrl: url, captures };
   } finally {
-    await browser?.close();
-    await closeServer(server);
+    try {
+      await browser?.close();
+    } finally {
+      await closeServer(server);
+    }
   }
 }
 
@@ -387,7 +390,7 @@ git diff --check
 git status --short
 ```
 
-Expected: 38 fast tests PASS, standalone HTML validation passes, capture verification passes, metadata widths are `2880` and `1170`, and only intentional script/test/dependency/screenshot changes remain.
+Expected: 39 fast tests PASS, standalone HTML validation passes, capture verification passes, metadata widths are `2880` and `1170`, and only intentional script/test/dependency/screenshot changes remain.
 
 - [ ] **Step 8: Visually inspect both canonical screenshots**
 
