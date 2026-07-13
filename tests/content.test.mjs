@@ -51,6 +51,60 @@ test('source prioritizes completed adjustments, actions, tools, evidence and mem
     'id="memory-appendix"',
   ]);
 
+  const toolsStart = template.indexOf('id="tools"');
+  const toolsEnd = template.indexOf('</section>', toolsStart);
+  const toolsText = visibleText(template.slice(toolsStart, toolsEnd));
+  for (const phrase of [
+    'UXTU（Universal x86 Tuning Utility）',
+    'Windows 下的处理器 / GPU 调校工具',
+    'ZenTimings',
+    '只读核对当前实际生效的内存参数',
+    '不能用它修改时序，也不能替代稳定性测试',
+    'AIDA64 · TM5',
+    'UMAF',
+    'AMD PBS / CBS / Overclocking',
+    '真实固件参数',
+    '本机约 80MB 的 UMAF 启动分区不可删除或格式化',
+    '错误设置可能导致无法启动',
+    '进入：开机或重启时持续按 F2，选择最右边第三项，再进入后续界面的第二项；详细安装与进入方法见第 03 章教程 01。',
+  ]) assert.ok(toolsText.includes(phrase), `missing tool role: ${phrase}`);
+
+  const futureStart = template.indexOf('id="future"');
+  const futureEnd = template.indexOf('</section>', futureStart);
+  const futureText = visibleText(template.slice(futureStart, futureEnd));
+  assert.ok(futureText.includes('游戏时 CPU 温度'));
+  assert.ok(futureText.includes(
+    '使用上风压散热器后，游戏时 CPU 温度稳定在 85–87°C 可接受。',
+  ));
+  assert.doesNotMatch(
+    futureText,
+    /使用上风压散热器后，最终游戏温度稳定在这个范围可接受。/,
+  );
+
+  const settingsStart = template.indexOf('id="settings"');
+  const settingsEnd = template.indexOf('</section>', settingsStart);
+  const settingsText = visibleText(template.slice(settingsStart, settingsEnd));
+  assert.ok(settingsText.includes(
+    'UXTU（Universal x86 Tuning Utility）· AMD Curve Optimizer · All Core Offset -20',
+  ));
+  assert.ok(settingsText.includes('CCD1 已关闭 · BIOS 已解锁 · UMAF 已安装'));
+  assert.ok(settingsText.includes('CPU 睿频已关闭 · 高性能电源计划已调出'));
+  for (const marker of ['BV1yv78zQEnD', 'BV1mvFpzoEp6']) {
+    assert.ok(settingsText.includes(marker), `tutorial must be in settings: ${marker}`);
+  }
+
+  const recoveryStart = template.indexOf('id="recovery"');
+  const recoveryEnd = template.indexOf('</section>', recoveryStart);
+  const recoveryText = visibleText(template.slice(recoveryStart, recoveryEnd));
+  assert.ok(recoveryText.includes('UXTU 没自启，手动打开也没反应'));
+  assert.doesNotMatch(recoveryText, /BV1yv78zQEnD|BV1mvFpzoEp6|教程 01|教程 02/);
+
+  assert.equal(
+    (template.match(/约 80MB 的 UMAF 启动分区不可删除或格式化/g) ?? []).length,
+    1,
+  );
+  assert.doesNotMatch(template, /AIDA64 · TM5 · ZenTimings/);
+
   const criticalStart = template.indexOf('<aside class="critical-note"');
   const criticalEnd = template.indexOf('</aside>', criticalStart);
   const criticalText = visibleText(template.slice(criticalStart, criticalEnd));
@@ -66,6 +120,7 @@ test('source prioritizes completed adjustments, actions, tools, evidence and mem
 
   const appendixStart = template.indexOf('id="memory-appendix"');
   const appendix = template.slice(appendixStart);
+  assert.doesNotMatch(appendix, /80MB|持续按 F2|ZenTimings\s*=|UMAF\s*=/);
   for (const assetId of ['memory-stable', 'umaf-spd', 'umaf-non-spd']) {
     assert.equal(
       (appendix.match(new RegExp(`\\{\\{asset:${assetId}\\}\\}`, 'g')) ?? []).length,
@@ -97,16 +152,19 @@ test('rendered copy matches the approved device handoff facts', async () => {
     '独显直连', '高性能电源模式保持关闭', 'All Core Offset -20',
     '开机自启', '开机自启自动应用配置',
     '16GB × 2 双通道', '5600 MT/s 正常保持',
-    'ZenTimings = 当前 Windows 实际运行结果',
-    'UMAF = 已记录字段的局部参数入口和回退对照',
-    '约 80MB 的 UMAF 分区不可删除', '持续按 F2',
+    'ZenTimings：核对当前实际生效的内存参数',
+    'UMAF：修改这些固件参数的位置，也是按记录值回退的入口',
+    '本机约 80MB 的 UMAF 启动分区不可删除或格式化', '持续按 F2',
     '修改前保留当前值截图',
     '接通电源 5000 MHz → 5200 MHz', '85–87°C',
+    '游戏时 CPU 温度',
+    '使用上风压散热器后，游戏时 CPU 温度稳定在 85–87°C 可接受。',
     'MCHOSE HUB', '小飞机（MSI Afterburner）', 'HWiNFO 仅传感器模式',
     'AIDA64', 'TM5', '先询问 AI 再使用',
+    'UXTU（Universal x86 Tuning Utility）',
     '性能调校参考档案', '当前调校基线已稳定运行',
     '已完成调整', '内存超频已完成', '内存时序已调整并稳定运行',
-    '当前关键设置与截图', '异常恢复与教程', '内存超频与时序记录',
+    '当前关键设置、截图与教程', '异常恢复', '内存超频与时序记录',
     'REFERENCE RULE / 使用原则',
     '全网最细！保姆级笔记本优化教程之cpu篇，小白也能降压定频，拯救你的cpu！适配于拯救者，鸡哥等绝大多数机型，演示机型8945hx 5070ti蛟龙16pro',
     '蛟龙16pro降温静音焚决（同类型笔记本直接可以抄作业）',
