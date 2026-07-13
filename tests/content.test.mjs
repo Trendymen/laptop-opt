@@ -12,6 +12,75 @@ function visibleText(html) {
     .replace(/\s+/g, ' ');
 }
 
+function assertInOrder(source, markers) {
+  let previous = -1;
+  for (const marker of markers) {
+    const current = source.indexOf(marker);
+    assert.ok(current > previous, `out of order or missing: ${marker}`);
+    previous = current;
+  }
+}
+
+test('source prioritizes completed adjustments, actions, tools, evidence and memory appendix', async () => {
+  const template = await readFile('src/index.template.html', 'utf8');
+  const heroStart = template.indexOf('<section class="hero"');
+  const heroEnd = template.indexOf('</section>', heroStart);
+  const heroText = visibleText(template.slice(heroStart, heroEnd));
+
+  for (const phrase of [
+    '已完成调整',
+    'CCD1 已关闭',
+    'CPU 睿频已关闭',
+    '5.0 GHz',
+    'UXTU 全核负压 -20',
+    '显卡保持独显直连',
+    '16GB × 2 双通道',
+    '内存超频已完成',
+    '5600 MT/s',
+    '内存时序已调整并稳定运行',
+  ]) {
+    assert.ok(heroText.includes(phrase), `missing hero adjustment: ${phrase}`);
+  }
+
+  assert.doesNotMatch(template, /id="baseline"|>00<|当前设置基线/);
+  assertInOrder(template, [
+    'id="future"',
+    'id="tools"',
+    'id="settings"',
+    'id="recovery"',
+    'id="memory-appendix"',
+  ]);
+
+  const criticalStart = template.indexOf('<aside class="critical-note"');
+  const criticalEnd = template.indexOf('</aside>', criticalStart);
+  const criticalText = visibleText(template.slice(criticalStart, criticalEnd));
+  assert.doesNotMatch(criticalText, /UMAF|80MB/);
+  for (const phrase of ['一次只改一项', '修改前保留当前值截图', '不稳定']) {
+    assert.ok(criticalText.includes(phrase), `missing operation principle: ${phrase}`);
+  }
+
+  const appendixStart = template.indexOf('id="memory-appendix"');
+  const appendix = template.slice(appendixStart);
+  for (const assetId of ['memory-stable', 'umaf-spd', 'umaf-non-spd']) {
+    assert.equal(
+      (appendix.match(new RegExp(`\\{\\{asset:${assetId}\\}\\}`, 'g')) ?? []).length,
+      1,
+    );
+  }
+
+  for (const assetId of [
+    'device-hero', 'cpu-frequency', 'control-power', 'gpu-mode',
+    'console-power-mode', 'uxtu-undervolt', 'uxtu-recovery',
+    'memory-stable', 'umaf-spd', 'umaf-non-spd',
+  ]) {
+    assert.equal(
+      (template.match(new RegExp(`\\{\\{asset:${assetId}\\}\\}`, 'g')) ?? []).length,
+      1,
+      `expected one placeholder for ${assetId}`,
+    );
+  }
+});
+
 test('rendered copy matches the approved device handoff facts', async () => {
   await buildPage({ cacheDir: integrationCacheDir });
   const html = await readFile(outputPath, 'utf8');
@@ -26,11 +95,13 @@ test('rendered copy matches the approved device handoff facts', async () => {
     'ZenTimings = 当前 Windows 实际运行结果',
     'UMAF = 已记录字段的局部参数入口和回退对照',
     '约 80MB 的 UMAF 分区不可删除', '持续按 F2',
-    'BIOS、负压和超频调整可能造成不稳定', '修改前保留当前值截图',
+    '修改前保留当前值截图',
     '接通电源 5000 MHz → 5200 MHz', '85–87°C',
     'MCHOSE HUB', '小飞机（MSI Afterburner）', 'HWiNFO 仅传感器模式',
     'AIDA64', 'TM5', '先询问 AI 再使用',
-    '性能调校参考档案', '当前调校基线已稳定运行', '当前设置基线',
+    '性能调校参考档案', '当前调校基线已稳定运行',
+    '已完成调整', '内存超频已完成', '内存时序已调整并稳定运行',
+    '当前关键设置与截图', '异常恢复与教程', '内存超频与时序记录',
     'REFERENCE RULE / 使用原则',
     '全网最细！保姆级笔记本优化教程之cpu篇，小白也能降压定频，拯救你的cpu！适配于拯救者，鸡哥等绝大多数机型，演示机型8945hx 5070ti蛟龙16pro',
     '蛟龙16pro降温静音焚决（同类型笔记本直接可以抄作业）',
