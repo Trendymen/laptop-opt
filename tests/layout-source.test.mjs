@@ -172,6 +172,10 @@ test('stylesheet encodes full-width layout and approved minimum type scale', asy
     'html[data-capture="true"]',
     '@media (prefers-reduced-motion: reduce)',
   ]) assert.ok(css.includes(token), `missing CSS invariant: ${token}`);
+  assert.match(
+    css,
+    /\.tools-list \.tool-warning\s*\{[^}]*\bmargin\s*:\s*1\.25rem 0 1\.5rem\s*;/,
+  );
   assert.doesNotMatch(css, /\.page-shell\s*\{[^}]*max-width/);
   assert.doesNotMatch(css, /overflow-y\s*:\s*(auto|scroll)/);
 });

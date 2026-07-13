@@ -31,7 +31,7 @@
           <div><dt>显卡当前状态</dt><dd>独显直连</dd><p>显卡保持独显直连</p></div>
           <div><dt>内存通道</dt><dd>16GB × 2</dd><p>16GB × 2 双通道</p></div>
           <div><dt>内存超频</dt><dd>5600 MT/s</dd><p>内存超频已完成，当前稳定运行</p></div>
-          <div><dt>内存时序</dt><dd>已调整</dd><p>内存时序已调整并稳定运行</p></div>
+          <div><dt>内存时序</dt><dd>C36 · 5600</dd><p>默认 C42 / 5200 MT/s → 当前 C36 / 5600 MT/s；已完成超频和时序收紧，目前稳定运行。内存时序已调整并稳定运行。</p></div>
         </dl>
       </div>
     </section>
@@ -52,12 +52,12 @@
       <section class="chapter" id="settings" data-reveal>
         <header class="chapter-heading"><span>03</span><div><h2>当前关键设置、截图与教程</h2><p>以下截图用于确认设置位置和恢复当前记录值，不是其他设备可以直接照抄的通用参数。</p></div></header>
         <article class="settings-summary"><small>已完成前置设置</small><h3>CCD1 已关闭 · BIOS 已解锁 · UMAF 已安装</h3><h3>CPU 睿频已关闭 · 高性能电源计划已调出</h3><p>这些是当前机器已经完成的前置状态，不需要重复操作。需要重新安装、重新进入或回看步骤时，再看本章后面的教程 01 / 02。</p></article>
+        <article class="tutorial" id="tutorial-1"><div class="tutorial-meta"><small>教程 01 · BV1yv78zQEnD · 22:35</small></div><div class="tutorial-copy"><h3>全网最细！保姆级笔记本优化教程之cpu篇，小白也能降压定频，拯救你的cpu！适配于拯救者，鸡哥等绝大多数机型，演示机型8945hx 5070ti蛟龙16pro</h3><p>用于关闭 CCD1、BIOS 解锁、UMAF 安装和进入方式。</p></div><a class="tutorial-link" href="https://www.bilibili.com/video/BV1yv78zQEnD/?share_source=copy_web&amp;vd_source=91e679d463038976da1b6275f56aec3c&amp;t=1355" target="_blank" rel="noreferrer"><strong>打开 B 站教程 ↗</strong><span>www.bilibili.com/video/BV1yv78zQEnD</span></a></article>
+        <article class="tutorial"><div class="tutorial-meta"><small>教程 02 · BV1mvFpzoEp6</small></div><div class="tutorial-copy"><h3>蛟龙16pro降温静音焚决（同类型笔记本直接可以抄作业）</h3><p>用于关闭 CPU 睿频、调出高性能电源计划和理解降温思路。</p></div><a class="tutorial-link" href="https://www.bilibili.com/video/BV1mvFpzoEp6/?share_source=copy_web&amp;vd_source=91e679d463038976da1b6275f56aec3c" target="_blank" rel="noreferrer"><strong>打开 B 站教程 ↗</strong><span>www.bilibili.com/video/BV1mvFpzoEp6</span></a></article>
         <div class="media-step"><h3>接通电源 5000 MHz</h3><p>Windows 高性能电源计划：电池 4500 MHz，接通电源 5000 MHz。</p><img src="{{asset:cpu-frequency}}" alt="Windows 高性能电源计划处理器最大频率设置"></div>
         <div class="media-step"><h3>CPU 功耗上限：SPL 65W · sPPT 85W · fPPT 85W</h3><p>机械革命控制台自定义模式限制 CPU 功耗上限，目的为控制极限 CPU 温度。</p><img src="{{asset:control-power}}" alt="机械革命控制台自定义模式 CPU 功耗限制"></div>
         <div class="media-stack"><figure><img src="{{asset:gpu-mode}}" alt="机械革命控制台独显直连设置"><figcaption>显卡模式：独显直连</figcaption></figure><figure><img src="{{asset:console-power-mode}}" alt="机械革命控制台高性能电源模式关闭"><figcaption>高性能电源模式保持关闭</figcaption></figure></div>
         <div class="media-step"><h3>UXTU（Universal x86 Tuning Utility）· AMD Curve Optimizer · All Core Offset -20</h3><p>这是本机当前通过 UXTU 应用的全核负压记录。如果出现蓝屏、重启、游戏或应用崩溃，优先恢复默认并重新验证。</p><img src="{{asset:uxtu-undervolt}}" alt="UXTU 全核负压负 20 设置"></div>
-        <article class="tutorial" id="tutorial-1"><div class="tutorial-meta"><small>教程 01 · BV1yv78zQEnD · 22:35</small></div><div class="tutorial-copy"><h3>全网最细！保姆级笔记本优化教程之cpu篇，小白也能降压定频，拯救你的cpu！适配于拯救者，鸡哥等绝大多数机型，演示机型8945hx 5070ti蛟龙16pro</h3><p>用于关闭 CCD1、BIOS 解锁、UMAF 安装和进入方式。</p></div><a class="tutorial-link" href="https://www.bilibili.com/video/BV1yv78zQEnD/?share_source=copy_web&amp;vd_source=91e679d463038976da1b6275f56aec3c&amp;t=1355" target="_blank" rel="noreferrer"><strong>打开 B 站教程 ↗</strong><span>www.bilibili.com/video/BV1yv78zQEnD</span></a></article>
-        <article class="tutorial"><div class="tutorial-meta"><small>教程 02 · BV1mvFpzoEp6</small></div><div class="tutorial-copy"><h3>蛟龙16pro降温静音焚决（同类型笔记本直接可以抄作业）</h3><p>用于关闭 CPU 睿频、调出高性能电源计划和理解降温思路。</p></div><a class="tutorial-link" href="https://www.bilibili.com/video/BV1mvFpzoEp6/?share_source=copy_web&amp;vd_source=91e679d463038976da1b6275f56aec3c" target="_blank" rel="noreferrer"><strong>打开 B 站教程 ↗</strong><span>www.bilibili.com/video/BV1mvFpzoEp6</span></a></article>
       </section>
 
       <section class="chapter" id="recovery" data-reveal>
@@ -67,8 +67,8 @@
 
       <section class="chapter memory-chapter" id="memory-appendix" data-reveal>
         <header class="chapter-heading"><span>附录</span><div><h2>内存超频与时序记录</h2><p>内存超频和时序已经调整完成；本节只用于确认当前结果和按已记录字段回退。</p></div></header>
-        <div class="stable-result"><div><small>CURRENT STABLE RESULT</small><h3>5600 MT/s 正常保持</h3><p>原装 32GB 单条已经替换为 16GB × 2 双通道。内存超频已完成，内存时序已调整并稳定运行；不把本节作为继续提高频率的建议。</p><p><strong>ZenTimings：核对当前实际生效的内存参数</strong></p><p>这张只读记录用于确认重启后 5600 MT/s、当前时序和控制器相关参数是否实际生效；ZenTimings 不负责修改参数，也不替代稳定性测试。</p></div><img src="{{asset:memory-stable}}" alt="ZenTimings 显示的当前稳定内存参数"></div>
-        <div class="umaf-reference"><header><small>局部回退 / 恢复参考</small><h3>UMAF：修改这些固件参数的位置，也是按记录值回退的入口</h3><p>两张图记录本机在 DDR SPD Timing 与 DDR Non-SPD Timing 中已经调整的字段。设置被回退时，只恢复图中明确记录的字段；未记录参数不要凭空推断。</p></header><div class="umaf-stack"><figure><img class="umaf-image" src="{{asset:umaf-spd}}" alt="UMAF DDR SPD Timing 已记录字段"><figcaption>DDR SPD Timing · 已记录字段</figcaption></figure><figure><img class="umaf-image" src="{{asset:umaf-non-spd}}" alt="UMAF DDR Non-SPD Timing 已记录字段"><figcaption>DDR Non-SPD Timing · 已记录字段</figcaption></figure></div></div>
+        <div class="stable-result"><div><small>CURRENT STABLE RESULT</small><h3>5600 MT/s 正常保持</h3><p>原装 32GB 单条已经替换为 16GB × 2 双通道。内存从默认 C42 / 5200 MT/s 调整为当前 C36 / 5600 MT/s，并稳定运行。内存超频已完成，内存时序已调整并稳定运行；不把本节作为继续提高频率的建议。</p><p><strong>ZenTimings：核对当前实际生效的内存参数</strong></p><p>这张只读记录用于确认重启后 5600 MT/s、当前时序和控制器相关参数是否实际生效；ZenTimings 不负责修改参数，也不替代稳定性测试。</p></div><img src="{{asset:memory-stable}}" alt="ZenTimings 显示的当前稳定内存参数"></div>
+        <div class="umaf-reference"><header><small>局部回退 / 恢复参考</small><h3>UMAF：修改这些固件参数的位置，也是按记录值回退的入口</h3><p>两张图记录本机在 DDR SPD Timing 与 DDR Non-SPD Timing 中已经调整的字段。设置被回退时，只恢复图中明确记录的字段；未记录参数不要凭空推断。</p></header><div class="umaf-stack"><figure><img class="umaf-image" src="{{asset:umaf-spd}}" alt="UMAF DDR SPD Timing 已记录字段"><figcaption>DDR SPD Timing · 已记录字段</figcaption></figure><figure><img class="umaf-image" src="{{asset:umaf-non-spd}}" alt="UMAF DDR Non-SPD Timing 已记录字段"><figcaption>DDR Non-SPD Timing · 已记录字段</figcaption></figure></div><p class="umaf-warning">本机约 80MB 的 UMAF 启动分区不可删除或格式化。进入：开机或重启时持续按 F2，选择最右边第三项，再进入后续界面的第二项；详细安装与进入方法见第 03 章教程 01。</p></div>
       </section>
     </main>
 

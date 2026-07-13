@@ -37,10 +37,13 @@ test('source prioritizes completed adjustments, actions, tools, evidence and mem
     '16GB × 2 双通道',
     '内存超频已完成',
     '5600 MT/s',
+    'C36 · 5600',
+    '默认 C42 / 5200 MT/s → 当前 C36 / 5600 MT/s',
     '内存时序已调整并稳定运行',
   ]) {
     assert.ok(heroText.includes(phrase), `missing hero adjustment: ${phrase}`);
   }
+  assert.doesNotMatch(heroText, /UMAF|80MB|持续按 F2/);
 
   assert.doesNotMatch(template, /id="baseline"|>00<|当前设置基线/);
   assertInOrder(template, [
@@ -68,6 +71,8 @@ test('source prioritizes completed adjustments, actions, tools, evidence and mem
     '错误设置可能导致无法启动',
     '进入：开机或重启时持续按 F2，选择最右边第三项，再进入后续界面的第二项；详细安装与进入方法见第 03 章教程 01。',
   ]) assert.ok(toolsText.includes(phrase), `missing tool role: ${phrase}`);
+  assert.ok(toolsText.includes('本机约 80MB 的 UMAF 启动分区不可删除或格式化'));
+  assert.ok(toolsText.includes('持续按 F2'));
 
   const futureStart = template.indexOf('id="future"');
   const futureEnd = template.indexOf('</section>', futureStart);
@@ -83,7 +88,14 @@ test('source prioritizes completed adjustments, actions, tools, evidence and mem
 
   const settingsStart = template.indexOf('id="settings"');
   const settingsEnd = template.indexOf('</section>', settingsStart);
-  const settingsText = visibleText(template.slice(settingsStart, settingsEnd));
+  const settingsSource = template.slice(settingsStart, settingsEnd);
+  const settingsText = visibleText(settingsSource);
+  assertInOrder(settingsSource, [
+    'class="settings-summary"',
+    'id="tutorial-1"',
+    'BV1mvFpzoEp6',
+    '{{asset:cpu-frequency}}',
+  ]);
   assert.ok(settingsText.includes(
     'UXTU（Universal x86 Tuning Utility）· AMD Curve Optimizer · All Core Offset -20',
   ));
@@ -99,16 +111,19 @@ test('source prioritizes completed adjustments, actions, tools, evidence and mem
   assert.ok(recoveryText.includes('UXTU 没自启，手动打开也没反应'));
   assert.doesNotMatch(recoveryText, /BV1yv78zQEnD|BV1mvFpzoEp6|教程 01|教程 02/);
 
+  const completeUmafWarning = '本机约 80MB 的 UMAF 启动分区不可删除或格式化。进入：开机或重启时持续按 F2，选择最右边第三项，再进入后续界面的第二项；详细安装与进入方法见第 03 章教程 01。';
+  const normalizedDocumentText = visibleText(template).replaceAll('。 进入：', '。进入：');
+  assert.equal(normalizedDocumentText.split(completeUmafWarning).length - 1, 2);
   assert.equal(
-    (template.match(/约 80MB 的 UMAF 启动分区不可删除或格式化/g) ?? []).length,
-    1,
+    (template.match(/本机约 80MB 的 UMAF 启动分区不可删除或格式化/g) ?? []).length,
+    2,
   );
   assert.doesNotMatch(template, /AIDA64 · TM5 · ZenTimings/);
 
   const criticalStart = template.indexOf('<aside class="critical-note"');
   const criticalEnd = template.indexOf('</aside>', criticalStart);
   const criticalText = visibleText(template.slice(criticalStart, criticalEnd));
-  assert.doesNotMatch(criticalText, /UMAF|80MB/);
+  assert.doesNotMatch(criticalText, /UMAF|80MB|持续按 F2/);
   for (const phrase of [
     'BIOS、负压和内存超频调整均可能导致不稳定',
     '一次只改一项',
@@ -120,7 +135,14 @@ test('source prioritizes completed adjustments, actions, tools, evidence and mem
 
   const appendixStart = template.indexOf('id="memory-appendix"');
   const appendix = template.slice(appendixStart);
-  assert.doesNotMatch(appendix, /80MB|持续按 F2|ZenTimings\s*=|UMAF\s*=/);
+  const appendixText = visibleText(appendix);
+  assert.ok(appendixText.includes(
+    '内存从默认 C42 / 5200 MT/s 调整为当前 C36 / 5600 MT/s，并稳定运行。',
+  ));
+  assert.ok(appendixText.includes(completeUmafWarning));
+  assert.ok(appendixText.includes('本机约 80MB 的 UMAF 启动分区不可删除或格式化'));
+  assert.ok(appendixText.includes('持续按 F2'));
+  assert.doesNotMatch(appendix, /ZenTimings\s*=|UMAF\s*=/);
   for (const assetId of ['memory-stable', 'umaf-spd', 'umaf-non-spd']) {
     assert.equal(
       (appendix.match(new RegExp(`\\{\\{asset:${assetId}\\}\\}`, 'g')) ?? []).length,

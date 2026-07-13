@@ -65,14 +65,15 @@ figcaption { padding-top: .8rem; color: var(--muted); font-size: var(--font-note
 .umaf-reference { margin-top: 5rem; }
 .umaf-reference header { max-width: 58rem; }
 .umaf-reference h3 { margin: .7rem 0; font-size: 2rem; }
-.umaf-reference header p { color: var(--muted); }
+.umaf-reference header p, .umaf-warning { color: var(--muted); }
 .settings-summary { margin-bottom: 4.5rem; padding: 1.75rem 2rem; border-left: 4px solid var(--acid); background: var(--surface); }
 .settings-summary h3 { margin: .75rem 0 .5rem; font-size: 1.8rem; }
 .settings-summary p { max-width: 52rem; margin: 0; color: var(--muted); }
 .tool-risk { border-left: 4px solid var(--danger); }
-.tools-list .tool-warning { margin-top: 1.25rem; padding: 1rem; color: var(--text); background: #26161b; }
+.tools-list .tool-warning { margin: 1.25rem 0 1.5rem; padding: 1rem; color: var(--text); background: #26161b; }
 .umaf-stack { display: grid; grid-template-columns: 1fr; gap: 1.75rem; margin-top: 2rem; }
 .umaf-image { width: 100%; height: auto; object-fit: contain; border: 1px solid var(--line); }
+.umaf-warning { margin-top: 2rem; padding: 1.3rem 1.5rem; border-left: 4px solid var(--danger); background: #171216; }
 .future-grid { display: grid; grid-template-columns: .75fr 1.25fr; gap: 2rem; }
 .temperature { min-height: 23rem; padding: 2.5rem; display: flex; flex-direction: column; justify-content: space-between; background: var(--violet); color: #0a0a0c; }
 .temperature small { color: #0a0a0c; }
