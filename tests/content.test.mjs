@@ -139,6 +139,20 @@ test('source prioritizes completed adjustments, actions, tools, evidence and mem
   assert.ok(appendixText.includes(
     '内存从默认 C42 / 5200 MT/s 调整为当前 C36 / 5600 MT/s，并稳定运行。',
   ));
+  for (const phrase of [
+    '回退填写清单（十六进制）',
+    'UMAF 方括号是十六进制设置记录，ZenTimings 是启动后的十进制生效值',
+    '回退时以 ZenTimings 当前稳定十进制值转换成 UMAF 十六进制填写',
+    'DDR SPD Timing：tCL 24 · tRCD 26 · tRP 26 · tRAS 4A · tRC 70 · tWR 40 · tRFC1 230 · tRFC2 17C · tRFCsb 12C · tRTP 0C · tRRDL 0A · tRRDS 08 · tFAW 20 · tWTRL 12 · tWTRS 06。',
+    'ZenTimings 显示 66，通常换算为 42；回退时仍填写 40',
+    'DDR Non-SPD Timing：tRDRDSCL 06 · tWRWRSCL 0A · tWRRD 06 · tRDWR 10。',
+    '其余截图中 Auto 字段保持 Auto。',
+  ]) assert.ok(appendixText.includes(phrase), `missing timing conversion note: ${phrase}`);
+  assert.doesNotMatch(appendixText, /\b0[xX][0-9A-F]+\b/);
+  assert.doesNotMatch(
+    appendixText,
+    /回退时按 UMAF 截图填写固件字段|不要为了让两张图数字相等而反推或擅改/,
+  );
   assert.ok(appendixText.includes(completeUmafWarning));
   assert.ok(appendixText.includes('本机约 80MB 的 UMAF 启动分区不可删除或格式化'));
   assert.ok(appendixText.includes('持续按 F2'));
