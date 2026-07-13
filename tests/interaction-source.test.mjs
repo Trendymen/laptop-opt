@@ -93,6 +93,33 @@ function assertStaticHeroInteraction(client, template, css) {
   ]) assert.doesNotMatch(heroCss, forbidden);
 }
 
+function extractRevealObserverOptions(client) {
+  const match = /new\s+IntersectionObserver\([\s\S]*?\},\s*(\{[^{}]*\})\s*\);/.exec(client);
+  assert.ok(match, 'missing reveal IntersectionObserver options');
+  return match[1];
+}
+
+function assertRevealObserverThresholdIsZero(client) {
+  const options = extractRevealObserverOptions(client);
+  const threshold = /\bthreshold\s*:\s*([^,}]+)/.exec(options);
+  assert.ok(threshold, 'missing reveal observer threshold');
+  assert.equal(threshold[1].trim(), '0', 'reveal observer threshold must be zero');
+}
+
+test('reveal observer uses a zero threshold so tall sections cannot starve', async () => {
+  const client = await readFile('src/client.js', 'utf8');
+
+  assertRevealObserverThresholdIsZero(client);
+
+  const options = extractRevealObserverOptions(client);
+  const positiveThreshold = options.replace(/\bthreshold\s*:\s*0\b/, 'threshold: 0.12');
+  assert.notEqual(positiveThreshold, options, 'positive-threshold mutation was not applied');
+  assert.throws(
+    () => assertRevealObserverThresholdIsZero(client.replace(options, positiveThreshold)),
+    /reveal observer threshold must be zero/,
+  );
+});
+
 test('motion remains accessible while evidence and completed adjustments stay static and unfolded', async () => {
   const [client, template, css] = await Promise.all([
     readFile('src/client.js', 'utf8'),
