@@ -66,6 +66,16 @@ function assertSixMetricItems(template) {
   assert.equal(residual, '', 'hero-metrics must not contain residual direct content');
 }
 
+function collectHeroMetricColumnValues(css) {
+  const values = [];
+  for (const rule of css.matchAll(/\.hero-metrics(?![-\w])\s*\{([^{}]*)\}/g)) {
+    for (const declaration of rule[1].matchAll(/\bgrid-template-columns\s*:\s*([^;]+)\s*;?/g)) {
+      values.push(declaration[1].trim().replace(/\s+/g, ' '));
+    }
+  }
+  return values;
+}
+
 function assertResponsiveHeroBreakpoints(css) {
   const tabletMarker = '@media (max-width: 900px)';
   const mobileMarker = '@media (max-width: 600px)';
@@ -77,6 +87,11 @@ function assertResponsiveHeroBreakpoints(css) {
   const mobileMetrics = extractBalancedBlock(mobile.body, '.hero-metrics');
   assert.match(tabletMetrics.body, /\bgrid-template-columns\s*:\s*1fr 1fr\s*;/);
   assert.match(mobileMetrics.body, /\bgrid-template-columns\s*:\s*1fr\s*;/);
+  assert.deepEqual(
+    collectHeroMetricColumnValues(css),
+    ['repeat(3, minmax(0, 1fr))', '1fr 1fr', '1fr'],
+    'hero-metrics must define exactly the desktop, tablet and mobile column sequence',
+  );
   assert.doesNotMatch(
     css.slice(mobile.endIndex),
     /[^{}]*\.hero-metrics(?![-\w])[^{}]*\{[^{}]*\bgrid-template-columns\s*:/,
@@ -138,6 +153,26 @@ test('hero source contracts reject review mutations without depending on compact
   assert.throws(() => assertResponsiveHeroBreakpoints(laterOverride));
   assert.doesNotThrow(() => assertSixMetricItems(spaciousMetrics));
   assert.throws(() => assertSixMetricItems(seventhMetric));
+});
+
+test('hero columns reject a global override between tablet and mobile media blocks', async () => {
+  const css = await readFile('src/styles.css', 'utf8');
+  const betweenOverride = css.replace(
+    '@media (max-width: 600px)',
+    '.hero-metrics { grid-template-columns: repeat(9, 1fr); }\n@media (max-width: 600px)',
+  );
+
+  assert.throws(() => assertResponsiveHeroBreakpoints(betweenOverride));
+});
+
+test('hero columns reject a second declaration inside the mobile media block', async () => {
+  const css = await readFile('src/styles.css', 'utf8');
+  const insideMobileOverride = css.replace(
+    '  .hero-metrics { grid-template-columns: 1fr; }\n}',
+    '  .hero-metrics { grid-template-columns: 1fr; }\n  .hero-metrics { grid-template-columns: 1fr 1fr; }\n}',
+  );
+
+  assert.throws(() => assertResponsiveHeroBreakpoints(insideMobileOverride));
 });
 
 test('evidence images stack vertically at their original ratios and the mobile hero is uncropped', async () => {
