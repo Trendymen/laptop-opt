@@ -19,6 +19,23 @@ test('stylesheet encodes full-width layout and approved minimum type scale', asy
   assert.doesNotMatch(css, /overflow-y\s*:\s*(auto|scroll)/);
 });
 
+test('completed hero adjustments use six responsive metrics without a baseline grid', async () => {
+  const [css, template] = await Promise.all([
+    readFile('src/styles.css', 'utf8'),
+    readFile('src/index.template.html', 'utf8'),
+  ]);
+  const adjustments = template.match(/<div class="hero-adjustments">[\s\S]*?<dl class="hero-metrics">([\s\S]*?)<\/dl>/)?.[1] ?? '';
+
+  assert.equal((adjustments.match(/<div><dt>/g) ?? []).length, 6);
+  assert.match(css, /\.hero-adjustments\s*\{[^}]*grid-column:\s*1\s*\/\s*-1;[^}]*padding:\s*1\.5rem var\(--gutter\) 2\.5rem;[^}]*border-top:\s*1px solid var\(--line\);[^}]*background:\s*var\(--bg\);/);
+  assert.match(css, /\.hero-metrics\s*\{[^}]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\);[^}]*border-left:\s*1px solid var\(--line\);/);
+  assert.match(css, /\.hero-metrics\s*>\s*div\s*\{[^}]*min-width:\s*0;[^}]*border-right:\s*1px solid var\(--line\);[^}]*border-bottom:\s*1px solid var\(--line\);/);
+  assert.match(css, /\.hero-metrics p\s*\{[^}]*color:\s*var\(--muted\);[^}]*font-size:\s*var\(--font-note\);/);
+  assert.match(css, /@media \(max-width: 900px\)\s*\{[\s\S]*?\.hero-metrics\s*\{\s*grid-template-columns:\s*1fr 1fr;\s*\}[\s\S]*?\}/);
+  assert.match(css, /@media \(max-width: 600px\)\s*\{\s*\.hero-metrics\s*\{\s*grid-template-columns:\s*1fr;\s*\}\s*\}/);
+  assert.doesNotMatch(css, /\.baseline-grid/);
+});
+
 test('evidence images stack vertically at their original ratios and the mobile hero is uncropped', async () => {
   const [css, template] = await Promise.all([
     readFile('src/styles.css', 'utf8'),
