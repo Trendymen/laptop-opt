@@ -24,6 +24,7 @@
 - The section 02 UMAF `.tool-warning` has `1.5rem` bottom spacing before the following F2 entry paragraph.
 - The Hero memory-timing card displays `C36 · 5600` and `默认 C42 / 5200 MT/s → 当前 C36 / 5600 MT/s；已完成超频和时序收紧，内存时序已调整并稳定运行。`.
 - The final ZenTimings stable-result copy includes `内存从默认 C42 / 5200 MT/s 调整为当前 C36 / 5600 MT/s，并稳定运行。`.
+- The final UMAF appendix gives the complete hexadecimal rollback list without `0x` prefixes, converted from ZenTimings current stable decimal values; `tWR` remains `40` as an explicit exception and all other pictured `Auto` fields remain `Auto`.
 
 ---
 
@@ -97,6 +98,15 @@ Extend the existing priority test in `tests/content.test.mjs` with:
   assert.ok(appendix.includes(
     '内存从默认 C42 / 5200 MT/s 调整为当前 C36 / 5600 MT/s，并稳定运行。',
   ));
+  for (const phrase of [
+    '以 ZenTimings 当前稳定十进制值为基准换算',
+    'tWR 例外：ZenTimings 显示 66，通常换算为 42；回退时仍填写 40',
+    'DDR SPD Timing：tCL 24 · tRCD 26 · tRP 26 · tRAS 4A · tRC 70 · tWR 40 · tRFC1 230 · tRFC2 17C · tRFCsb 12C · tRTP 0C · tRRDL 0A · tRRDS 08 · tFAW 20 · tWTRL 12 · tWTRS 06',
+    'DDR Non-SPD Timing：tRDRDSCL 06 · tWRWRSCL 0A · tWRRD 06 · tRDWR 10',
+    '其余 Auto 字段保持 Auto',
+    '图片用于找位置，本列表用于回退填写',
+    '填写并重启后，再用 ZenTimings 核对实际生效值',
+  ]) assert.ok(appendixText.includes(phrase), `missing rollback hex list: ${phrase}`);
   assert.doesNotMatch(template, /AIDA64 · TM5 · ZenTimings/);
   assert.ok(template.includes('游戏时 CPU 温度'));
   assert.ok(template.includes('使用上风压散热器后，游戏时 CPU 温度稳定在 85–87°C 可接受。'));
@@ -176,8 +186,9 @@ Replace the ZenTimings appendix copy with:
 Replace the UMAF appendix header, then retain an updated warning paragraph in its original position:
 
 ```html
-<h3>UMAF：修改这些固件参数的位置，也是按记录值回退的入口</h3>
-<p>两张图记录本机在 DDR SPD Timing 与 DDR Non-SPD Timing 中已经调整的字段。设置被回退时，只恢复图中明确记录的字段；未记录参数不要凭空推断。</p>
+<h3>UMAF：填写回退值的固件入口</h3>
+<p>两张图用于定位 DDR SPD Timing 与 DDR Non-SPD Timing 字段；旧图部分数值与当前稳定结果不同，因此图片用于找位置，下面的列表用于回退填写。</p>
+<aside class="timing-value-note"><strong>回退十六进制值</strong><p>以 ZenTimings 当前稳定十进制值为基准换算。tWR 例外：ZenTimings 显示 66，通常换算为 42；回退时仍填写 40。</p><p><b>DDR SPD Timing：</b>tCL 24 · tRCD 26 · tRP 26 · tRAS 4A · tRC 70 · tWR 40 · tRFC1 230 · tRFC2 17C · tRFCsb 12C · tRTP 0C · tRRDL 0A · tRRDS 08 · tFAW 20 · tWTRL 12 · tWTRS 06</p><p><b>DDR Non-SPD Timing：</b>tRDRDSCL 06 · tWRWRSCL 0A · tWRRD 06 · tRDWR 10</p><p>其余 Auto 字段保持 Auto。填写并重启后，再用 ZenTimings 核对实际生效值。</p></aside>
 <p class="umaf-warning">本机约 80MB 的 UMAF 启动分区不可删除或格式化。进入：开机或重启时持续按 F2，选择最右边第三项，再进入后续界面的第二项；详细安装与进入方法见第 03 章教程 01。</p>
 ```
 
@@ -193,6 +204,9 @@ In `src/styles.css`, replace the old appendix warning selectors with:
 .settings-summary p { max-width: 52rem; margin: 0; color: var(--muted); }
 .tool-risk { border-left: 4px solid var(--danger); }
 .tools-list .tool-warning { margin: 1.25rem 0 1.5rem; padding: 1rem; color: var(--text); background: #26161b; }
+.timing-value-note { margin: 2rem 0; padding: 1.5rem; border: 1px solid var(--line); background: #11151a; }
+.timing-value-note strong { color: var(--acid); }
+.timing-value-note p { margin: .8rem 0 0; color: var(--muted); }
 ```
 
 Add a focused `tests/layout-source.test.mjs` contract before changing the CSS:
