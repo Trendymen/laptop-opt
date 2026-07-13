@@ -55,7 +55,12 @@ test('source prioritizes completed adjustments, actions, tools, evidence and mem
   const criticalEnd = template.indexOf('</aside>', criticalStart);
   const criticalText = visibleText(template.slice(criticalStart, criticalEnd));
   assert.doesNotMatch(criticalText, /UMAF|80MB/);
-  for (const phrase of ['一次只改一项', '修改前保留当前值截图', '不稳定']) {
+  for (const phrase of [
+    'BIOS、负压和内存超频调整均可能导致不稳定',
+    '一次只改一项',
+    '修改前保留当前值截图',
+    '不稳定',
+  ]) {
     assert.ok(criticalText.includes(phrase), `missing operation principle: ${phrase}`);
   }
 
