@@ -19,6 +19,7 @@
 - Section 03 is titled `当前关键设置、截图与教程`, states both completed prerequisite lines before its screenshots, and contains both existing Bilibili tutorials.
 - Section 04 is titled `异常恢复` and contains only the UXTU recovery instructions and image.
 - The two vague equals-sign labels are removed; all 10 images and both tutorial URLs remain unchanged.
+- The section 01 temperature card says `游戏时 CPU 温度` and `使用上风压散热器后，游戏时 CPU 温度稳定在 85–87°C 可接受。`.
 
 ---
 
@@ -53,6 +54,8 @@ Extend the existing priority test in `tests/content.test.mjs` with:
     '真实固件参数',
     '本机约 80MB 的 UMAF 启动分区不可删除或格式化',
     '错误设置可能导致无法启动',
+    '开机或重启时持续按 F2',
+    '详细安装与进入方法见第 03 章教程 01',
   ]) assert.ok(toolsText.includes(phrase), `missing tool role: ${phrase}`);
 
   const settingsStart = template.indexOf('id="settings"');
@@ -78,8 +81,11 @@ Extend the existing priority test in `tests/content.test.mjs` with:
     1,
   );
   assert.doesNotMatch(criticalText, /UMAF|80MB/);
-  assert.doesNotMatch(appendix, /80MB|ZenTimings\s*=|UMAF\s*=/);
+  assert.doesNotMatch(appendix, /80MB|持续按 F2|ZenTimings\s*=|UMAF\s*=/);
   assert.doesNotMatch(template, /AIDA64 · TM5 · ZenTimings/);
+  assert.ok(template.includes('游戏时 CPU 温度'));
+  assert.ok(template.includes('使用上风压散热器后，游戏时 CPU 温度稳定在 85–87°C 可接受。'));
+  assert.doesNotMatch(template, /最终游戏温度/);
 ```
 
 Update the rendered `required` phrases by removing both old equals-sign labels and adding:
@@ -112,7 +118,7 @@ In `src/index.template.html`, keep the first three cards and replace the final c
 <article><small>Windows 调校 · 当前在用</small><h3>UXTU（Universal x86 Tuning Utility）</h3><p>Windows 下的处理器 / GPU 调校工具。本机用它应用 AMD Curve Optimizer 全核负压 -20；如果配置未自动应用，按第 04 章恢复开机自启和自动应用配置。</p></article>
 <article><small>内存参数核对 · 只读</small><h3>ZenTimings</h3><p>只读核对当前实际生效的内存参数，包括主要时序、MCLK / UCLK / FCLK 与平台可读取的相关电压；用于重启后确认参数并保留截图。不能用它修改时序，也不能替代稳定性测试。</p></article>
 <article><small>压力测试 · 先询问 AI</small><h3>AIDA64 · TM5</h3><p>用于压力测试和结果判断。开始前先确认测试步骤、停止条件和结果判断。</p></article>
-<article class="tool-risk"><small>固件设置 · 高风险</small><h3>UMAF</h3><p>用于进入 AMD PBS / CBS / Overclocking 隐藏菜单，修改内存频率、时序等真实固件参数；错误设置可能导致无法启动。</p><p class="tool-warning">本机约 80MB 的 UMAF 启动分区不可删除或格式化。</p></article>
+<article class="tool-risk"><small>固件设置 · 高风险</small><h3>UMAF</h3><p>用于进入 AMD PBS / CBS / Overclocking 隐藏菜单，修改内存频率、时序等真实固件参数；错误设置可能导致无法启动。</p><p class="tool-warning">本机约 80MB 的 UMAF 启动分区不可删除或格式化。</p><p>进入：开机或重启时持续按 F2，选择最右边第三项，再进入后续界面的第二项；详细安装与进入方法见第 03 章教程 01。</p></article>
 ```
 
 - [ ] **Step 4: Move both tutorials into section 03 and add the completed-settings summary**
