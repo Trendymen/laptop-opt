@@ -15,12 +15,10 @@ export async function buildPage({
   let html = await readFile(resolve(root, 'src/index.template.html'), 'utf8');
   const styles = await readFile(resolve(root, 'src/styles.css'), 'utf8');
   const captureBootstrap = await readFile(resolve(root, 'src/capture-bootstrap.js'), 'utf8');
-  const clientScript = await readFile(resolve(root, 'src/client.js'), 'utf8');
 
   html = html
     .replace('{{styles}}', styles)
-    .replace('{{capture-bootstrap}}', captureBootstrap)
-    .replace('{{client-script}}', clientScript);
+    .replace('{{capture-bootstrap}}', captureBootstrap);
 
   const report = [];
   for (const asset of assets) {

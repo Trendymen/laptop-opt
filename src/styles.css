@@ -108,11 +108,17 @@ figcaption { padding-top: .8rem; color: var(--muted); font-size: var(--font-note
 footer { padding: 6rem var(--gutter) 7rem; background: #f1f0eb; color: #0a0a0c; }
 footer small { color: #4f46c7; }
 footer h2 { max-width: 68rem; margin: 2rem 0 0; font-size: clamp(3rem, 6vw, 6.5rem); line-height: .98; letter-spacing: -.05em; }
-[data-reveal] { opacity: 0; transform: translateY(1.5rem); transition: opacity .6s ease, transform .6s ease; }
-[data-reveal].is-visible { opacity: 1; transform: none; }
-html[data-capture="true"] [data-reveal] { opacity: 1; transform: none; transition: none; }
+@keyframes css-reveal {
+  from { opacity: .7; transform: translateY(.75rem); }
+  to { opacity: 1; transform: none; }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    [data-reveal] { animation: css-reveal linear both; animation-timeline: view(); animation-range: entry 0% entry 35%; }
+  }
+}
 html[data-capture="true"] *, html[data-capture="true"] *::before, html[data-capture="true"] *::after { animation: none !important; transition: none !important; }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } [data-reveal] { opacity: 1; transform: none; transition: none; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 @media (max-width: 900px) {
   .topbar > div { display: none; }
   .hero { grid-template-columns: 1fr; }
@@ -130,6 +136,5 @@ html[data-capture="true"] *, html[data-capture="true"] *::before, html[data-capt
 }
 @media print {
   * { animation: none !important; transition: none !important; box-shadow: none !important; }
-  [data-reveal] { opacity: 1 !important; transform: none !important; }
   a { text-decoration: none; }
 }

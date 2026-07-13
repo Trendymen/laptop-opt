@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 function extractElementByClass(source, tagName, className) {
@@ -26,47 +26,14 @@ function extractHeroCssRules(css) {
     .join('\n');
 }
 
-function escapeRegExp(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function assertNoInvisibleRevealFallback(css) {
+  assert.doesNotMatch(
+    css,
+    /(?:^|})\s*\[data-reveal\]\s*\{[^}]*\bopacity\s*:\s*0(?:\.0*)?\b/m,
+  );
 }
 
-function collectHeroClientTargets(client) {
-  const heroSelectors = new Set(['.hero', '.hero-adjustments', '.hero-metrics']);
-  const variables = new Set();
-  const calls = new Set();
-  const queryPattern = /[A-Za-z_$][\w$]*(?:\s*\.\s*[A-Za-z_$][\w$]*)*\s*\.\s*querySelector(?:All)?\s*\(\s*(["'])([^"']+)\1\s*\)/g;
-  for (const match of client.matchAll(queryPattern)) {
-    if (!heroSelectors.has(match[2].trim())) continue;
-    calls.add(match[0]);
-    const prefix = client.slice(Math.max(0, match.index - 160), match.index);
-    const assignment = prefix.match(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:\[\s*\.\.\.\s*)?$/);
-    if (assignment) variables.add(assignment[1]);
-  }
-  return { variables, calls };
-}
-
-function assertHeroClientRemainsVisible(client) {
-  const { variables, calls } = collectHeroClientTargets(client);
-  const targetPatterns = [
-    ...[...variables].map((name) => `(?<![\\w$.])${escapeRegExp(name)}`),
-    ...[...calls].map(escapeRegExp),
-  ];
-  const hidingOperations = [
-    String.raw`\.\s*hidden\s*=`,
-    String.raw`\.\s*style\s*\.\s*display\s*=\s*["']none["']`,
-    String.raw`\.\s*style\s*\.\s*visibility\s*=\s*["']hidden["']`,
-    String.raw`\.\s*toggleAttribute\s*\(\s*["']hidden["']`,
-    String.raw`\.\s*setAttribute\s*\(\s*["']aria-hidden["']`,
-    String.raw`\.\s*classList\s*\.\s*(?:add|toggle|replace)\s*\([^)]*["'](?:(?:is|u)-)?(?:hidden|collapsed)["']`,
-  ];
-  for (const target of targetPatterns) {
-    for (const operation of hidingOperations) {
-      assert.doesNotMatch(client, new RegExp(`${target}\\s*${operation}`));
-    }
-  }
-}
-
-function assertStaticHeroInteraction(client, template, css) {
+function assertStaticHeroInteraction(template, css) {
   const hero = extractElementByClass(template, 'section', 'hero');
   const adjustments = extractElementByClass(hero, 'div', 'hero-adjustments');
   const forbiddenMarkup = [
@@ -80,8 +47,6 @@ function assertStaticHeroInteraction(client, template, css) {
     for (const forbidden of forbiddenMarkup) assert.doesNotMatch(range, forbidden);
   }
 
-  assertHeroClientRemainsVisible(client);
-
   const heroCss = extractHeroCssRules(css);
   assert.notEqual(heroCss, '', 'missing hero adjustments/metrics CSS rules');
   for (const forbidden of [
@@ -93,110 +58,62 @@ function assertStaticHeroInteraction(client, template, css) {
   ]) assert.doesNotMatch(heroCss, forbidden);
 }
 
-function extractRevealObserverOptions(client) {
-  const match = /new\s+IntersectionObserver\([\s\S]*?\},\s*(\{[^{}]*\})\s*\);/.exec(client);
-  assert.ok(match, 'missing reveal IntersectionObserver options');
-  return match[1];
-}
+test('viewport reveal is CSS-only with a visible fallback', async () => {
+  const [template, css, buildSource] = await Promise.all([
+    readFile('src/index.template.html', 'utf8'),
+    readFile('src/styles.css', 'utf8'),
+    readFile('scripts/build.mjs', 'utf8'),
+  ]);
 
-function assertRevealObserverThresholdIsZero(client) {
-  const options = extractRevealObserverOptions(client);
-  const threshold = /\bthreshold\s*:\s*([^,}]+)/.exec(options);
-  assert.ok(threshold, 'missing reveal observer threshold');
-  assert.equal(threshold[1].trim(), '0', 'reveal observer threshold must be zero');
-}
-
-test('reveal observer uses a zero threshold so tall sections cannot starve', async () => {
-  const client = await readFile('src/client.js', 'utf8');
-
-  assertRevealObserverThresholdIsZero(client);
-
-  const options = extractRevealObserverOptions(client);
-  const positiveThreshold = options.replace(/\bthreshold\s*:\s*0\b/, 'threshold: 0.12');
-  assert.notEqual(positiveThreshold, options, 'positive-threshold mutation was not applied');
-  assert.throws(
-    () => assertRevealObserverThresholdIsZero(client.replace(options, positiveThreshold)),
-    /reveal observer threshold must be zero/,
-  );
+  assert.equal((template.match(/\bdata-reveal\b/g) ?? []).length, 6);
+  assert.doesNotMatch(template, /\{\{client-script\}\}/);
+  assert.doesNotMatch(css, /\.is-visible\b/);
+  assertNoInvisibleRevealFallback(css);
+  assert.throws(() => assertNoInvisibleRevealFallback(
+    `${css}\n[data-reveal] { transform: translateY(1rem); opacity: 0; }`,
+  ));
+  assert.match(css, /@supports\s*\(animation-timeline:\s*view\(\)\)/);
+  assert.match(css, /@media\s*\(prefers-reduced-motion:\s*no-preference\)/);
+  assert.match(css, /\[data-reveal\]\s*\{[^}]*animation:[^}]*animation-timeline:\s*view\(\);[^}]*animation-range:/);
+  assert.match(css, /@keyframes\s+css-reveal[\s\S]*?from\s*\{[^}]*opacity:\s*\.7/);
+  assert.doesNotMatch(buildSource, /clientScript|client\.js|client-script/);
+  assert.match(template, /<script>\{\{capture-bootstrap\}\}<\/script>/);
+  await assert.rejects(access('src/client.js'), { code: 'ENOENT' });
 });
 
-test('motion remains accessible while evidence and completed adjustments stay static and unfolded', async () => {
-  const [client, template, css] = await Promise.all([
-    readFile('src/client.js', 'utf8'),
+test('content stays static and unfolded while CSS keeps reduced-motion support', async () => {
+  const [template, css] = await Promise.all([
     readFile('src/index.template.html', 'utf8'),
     readFile('src/styles.css', 'utf8'),
   ]);
-  assert.match(client, /document\.documentElement\.classList\.add\('js-ready'\)/);
-  assert.match(client, /prefers-reduced-motion/);
-  assert.match(client, /dataset\.capture === 'true'/);
-  assert.match(client, /IntersectionObserver/);
-  assert.match(client, /classList\.add\('is-visible'\)/);
-  assertStaticHeroInteraction(client, template, css);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
+  assertStaticHeroInteraction(template, css);
   assert.doesNotMatch(template, /data-zoom|image-dialog/);
   assert.doesNotMatch(css, /cursor:\s*zoom-in/);
 });
 
-test('hero interaction contract rejects hiding mutations without banning unrelated events', async () => {
-  const [client, template, css] = await Promise.all([
-    readFile('src/client.js', 'utf8'),
+test('hero interaction contract rejects hiding markup and CSS mutations', async () => {
+  const [template, css] = await Promise.all([
     readFile('src/index.template.html', 'utf8'),
     readFile('src/styles.css', 'utf8'),
   ]);
   const hiddenAdjustments = template.replace('class="hero-adjustments"', 'class="hero-adjustments" hidden');
   const checkboxAdjustments = template.replace('<p class="adjustments-label">', '<input type="checkbox"><p class="adjustments-label">');
-  const hiddenClient = `${client}\nconst adjustments = document.querySelector('.hero-adjustments');\nadjustments.hidden = true;`;
-  const hiddenClassClient = `${client}\nconst metrics = document.querySelectorAll('.hero-metrics');\nmetrics.classList.toggle('is-hidden');`;
-  const directHiddenClient = `${client}\ndocument.querySelector('.hero').toggleAttribute('hidden');`;
   const collapsedCss = `${css}\n.hero-adjustments { max-height: 0; }`;
   const checkboxCss = `${css}\n.hero-adjustments:has(input[type="checkbox"]:checked) .hero-metrics { display: none; }`;
-  const benignClient = `${client}\nconst hero = document.querySelector('.hero');\nevent.preventDefault();\nhero.classList.toggle('active');\nconst attributeName = 'aria-expanded';`;
 
-  assert.throws(() => assertStaticHeroInteraction(client, hiddenAdjustments, css));
-  assert.throws(() => assertStaticHeroInteraction(client, checkboxAdjustments, css));
-  assert.throws(() => assertStaticHeroInteraction(hiddenClient, template, css));
-  assert.throws(() => assertStaticHeroInteraction(hiddenClassClient, template, css));
-  assert.throws(() => assertStaticHeroInteraction(directHiddenClient, template, css));
-  assert.throws(() => assertStaticHeroInteraction(client, template, collapsedCss));
-  assert.throws(() => assertStaticHeroInteraction(client, template, checkboxCss));
-  assert.doesNotThrow(() => assertStaticHeroInteraction(benignClient, template, css));
+  assert.throws(() => assertStaticHeroInteraction(hiddenAdjustments, css));
+  assert.throws(() => assertStaticHeroInteraction(checkboxAdjustments, css));
+  assert.throws(() => assertStaticHeroInteraction(template, collapsedCss));
+  assert.throws(() => assertStaticHeroInteraction(template, checkboxCss));
 });
 
 test('hero interaction contract rejects hiding the exact hero CSS parent', async () => {
-  const [client, template, css] = await Promise.all([
-    readFile('src/client.js', 'utf8'),
+  const [template, css] = await Promise.all([
     readFile('src/index.template.html', 'utf8'),
     readFile('src/styles.css', 'utf8'),
   ]);
 
-  assert.throws(() => assertStaticHeroInteraction(client, template, `${css}\n.hero { display: none; }`));
-  assert.doesNotThrow(() => assertStaticHeroInteraction(client, template, `${css}\n.hero-media { display: none; }`));
-});
-
-test('hero interaction contract follows a selected hero variable', async () => {
-  const [client, template, css] = await Promise.all([
-    readFile('src/client.js', 'utf8'),
-    readFile('src/index.template.html', 'utf8'),
-    readFile('src/styles.css', 'utf8'),
-  ]);
-  const selectedHero = `${client}\nconst hero = document.querySelector('.hero');\n`;
-  for (const hidingOperation of [
-    'hero.hidden = true;',
-    "hero.style.display = 'none';",
-    "hero.style.visibility = 'hidden';",
-    "hero.toggleAttribute('hidden');",
-    "hero.setAttribute('aria-hidden', 'true');",
-    "hero.classList.add('hidden');",
-  ]) {
-    assert.throws(() => assertStaticHeroInteraction(`${selectedHero}${hidingOperation}`, template, css));
-  }
-});
-
-test('hero interaction contract allows unrelated nodes to use hidden', async () => {
-  const [client, template, css] = await Promise.all([
-    readFile('src/client.js', 'utf8'),
-    readFile('src/index.template.html', 'utf8'),
-    readFile('src/styles.css', 'utf8'),
-  ]);
-
-  assert.doesNotThrow(() => assertStaticHeroInteraction(`${client}\nmodal.hidden = true;`, template, css));
+  assert.throws(() => assertStaticHeroInteraction(template, `${css}\n.hero { display: none; }`));
+  assert.doesNotThrow(() => assertStaticHeroInteraction(template, `${css}\n.hero-media { display: none; }`));
 });
