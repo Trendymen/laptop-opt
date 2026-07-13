@@ -25,7 +25,26 @@ test('source prioritizes completed adjustments, actions, tools, evidence and mem
   const template = await readFile('src/index.template.html', 'utf8');
   const heroStart = template.indexOf('<section class="hero"');
   const heroEnd = template.indexOf('</section>', heroStart);
-  const heroText = visibleText(template.slice(heroStart, heroEnd));
+  const heroSource = template.slice(heroStart, heroEnd);
+  const heroText = visibleText(heroSource);
+  const heroMetrics = heroSource.match(/<dl class="hero-metrics">([\s\S]*?)<\/dl>/)?.[1];
+  assert.ok(heroMetrics, 'missing hero metrics');
+  const heroMetricHeadings = [...heroMetrics.matchAll(/<dt>([^<]+)<\/dt>/g)]
+    .map((match) => match[1]);
+  assert.equal(heroMetricHeadings.length, 5, 'Hero must contain exactly five metric cards');
+  assert.equal(
+    heroMetricHeadings.filter((heading) => heading === '内存超频与时序').length,
+    1,
+    'Hero must contain exactly one merged memory tuning card',
+  );
+  assert.match(
+    heroMetrics,
+    /<div class="hero-metric--memory"><dt>内存超频与时序<\/dt><dd>5600 MT\/s · C36<\/dd><p>默认 5200 MT\/s \/ C42 → 当前 5600 MT\/s \/ C36；内存超频和时序收紧已完成，并稳定运行。<\/p><\/div>/,
+  );
+  assert.match(
+    heroMetrics,
+    /<div><dt>内存通道<\/dt><dd>16GB × 2<\/dd><p>原装 32GB 英睿达镁光单条已更换为十铨 16GB × 2（海力士 M-die）双内存条，组成 32GB 双通道。<\/p><\/div>/,
+  );
 
   for (const phrase of [
     '已完成调整',
@@ -34,12 +53,10 @@ test('source prioritizes completed adjustments, actions, tools, evidence and mem
     '5.0 GHz',
     'UXTU 全核负压 -20',
     '显卡保持独显直连',
-    '16GB × 2 双通道',
-    '内存超频已完成',
-    '5600 MT/s',
-    'C36 · 5600',
-    '默认 C42 / 5200 MT/s → 当前 C36 / 5600 MT/s；已完成超频和时序收紧，内存时序已调整并稳定运行。',
-    '内存时序已调整并稳定运行',
+    '原装 32GB 英睿达镁光单条已更换为十铨 16GB × 2（海力士 M-die）双内存条，组成 32GB 双通道。',
+    '内存超频与时序',
+    '5600 MT/s · C36',
+    '默认 5200 MT/s / C42 → 当前 5600 MT/s / C36；内存超频和时序收紧已完成，并稳定运行。',
   ]) {
     assert.ok(heroText.includes(phrase), `missing hero adjustment: ${phrase}`);
   }

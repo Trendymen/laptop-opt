@@ -37,6 +37,7 @@ h1 { max-width: 6em; margin: 3.8rem 0 1.5rem; font-size: clamp(4rem, 6vw, 7.2rem
 .hero-metrics dt { color: var(--muted); font-size: var(--font-note); }
 .hero-metrics dd { margin: .35rem 0 0; color: var(--acid); font-size: var(--font-value); font-weight: 850; }
 .hero-metrics p { margin: .45rem 0 0; color: var(--muted); font-size: var(--font-note); }
+.hero-metric--memory { grid-column: span 2; }
 .critical-note { display: flex; align-items: center; gap: 1.25rem; padding: 1.25rem var(--gutter); background: var(--acid); color: #0a0a0c; font-size: 1rem; }
 .critical-note strong { padding-right: 1.25rem; border-right: 1px solid #0a0a0c55; }
 .chapter { padding: clamp(5rem, 8vw, 9rem) var(--gutter); border-bottom: 1px solid var(--line); }
@@ -133,6 +134,7 @@ html[data-capture="true"] *, html[data-capture="true"] *::before, html[data-capt
 }
 @media (max-width: 600px) {
   .hero-metrics { grid-template-columns: 1fr; }
+  .hero-metric--memory { grid-column: auto; }
 }
 @media print {
   * { animation: none !important; transition: none !important; box-shadow: none !important; }

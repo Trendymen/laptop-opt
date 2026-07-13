@@ -114,16 +114,27 @@ function extractHeroMetricsMarkup(template) {
   return match[1];
 }
 
-function assertSixMetricItems(template) {
+function assertFiveMetricItems(template) {
   const metrics = extractHeroMetricsMarkup(template);
   const metricItemSource = String.raw`<div\b[^>]*>\s*<dt\b[^>]*>[\s\S]*?<\/dt>\s*<dd\b[^>]*>[\s\S]*?<\/dd>\s*<p\b[^>]*>[\s\S]*?<\/p>\s*<\/div>`;
   const items = metrics.match(new RegExp(metricItemSource, 'gi')) ?? [];
-  assert.equal(items.length, 6, 'hero-metrics must contain exactly six complete items');
+  assert.equal(items.length, 5, 'hero-metrics must contain exactly five complete items');
   const residual = metrics
     .replace(new RegExp(metricItemSource, 'gi'), '')
     .replace(/<!--[\s\S]*?-->/g, '')
     .trim();
   assert.equal(residual, '', 'hero-metrics must not contain residual direct content');
+}
+
+function collectMemoryMetricColumnValues(css) {
+  const values = [];
+  for (const rule of scanCssRules(css)) {
+    if (!/(?:^|,)\s*\.hero-metric--memory\s*(?:,|$)/.test(rule.selector)) continue;
+    for (const declaration of rule.body.matchAll(/\bgrid-column\s*:\s*([^;]+)\s*;?/g)) {
+      values.push(declaration[1].trim().replace(/\s+/g, ' '));
+    }
+  }
+  return values;
 }
 
 function collectHeroMetricColumnValues(css) {
@@ -160,6 +171,23 @@ function assertResponsiveHeroBreakpoints(css) {
   );
 }
 
+function assertResponsiveMemoryMetric(css) {
+  const tabletMarker = '@media (max-width: 900px)';
+  const mobileMarker = '@media (max-width: 600px)';
+  const tabletStart = css.indexOf(tabletMarker);
+  const defaultMemory = extractBalancedBlock(css.slice(0, tabletStart), '.hero-metric--memory');
+  const mobile = extractBalancedBlock(css, mobileMarker);
+  const mobileMemory = extractBalancedBlock(mobile.body, '.hero-metric--memory');
+
+  assert.match(defaultMemory.body, /\bgrid-column\s*:\s*span 2\s*;/);
+  assert.match(mobileMemory.body, /\bgrid-column\s*:\s*auto\s*;/);
+  assert.deepEqual(
+    collectMemoryMetricColumnValues(css),
+    ['span 2', 'auto'],
+    'merged memory metric must span two columns except on mobile',
+  );
+}
+
 test('stylesheet encodes full-width layout and approved minimum type scale', async () => {
   const css = await readFile('src/styles.css', 'utf8');
   for (const token of [
@@ -180,17 +208,18 @@ test('stylesheet encodes full-width layout and approved minimum type scale', asy
   assert.doesNotMatch(css, /overflow-y\s*:\s*(auto|scroll)/);
 });
 
-test('completed hero adjustments use six responsive metrics without a baseline grid', async () => {
+test('completed hero adjustments use five responsive metrics with a merged memory card', async () => {
   const [css, template] = await Promise.all([
     readFile('src/styles.css', 'utf8'),
     readFile('src/index.template.html', 'utf8'),
   ]);
-  assertSixMetricItems(template);
+  assertFiveMetricItems(template);
   assert.match(css, /\.hero-adjustments\s*\{[^}]*grid-column:\s*1\s*\/\s*-1;[^}]*padding:\s*1\.5rem var\(--gutter\) 2\.5rem;[^}]*border-top:\s*1px solid var\(--line\);[^}]*background:\s*var\(--bg\);/);
   assert.match(css, /\.hero-metrics\s*\{[^}]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\);[^}]*border-left:\s*1px solid var\(--line\);/);
   assert.match(css, /\.hero-metrics\s*>\s*div\s*\{[^}]*min-width:\s*0;[^}]*border-right:\s*1px solid var\(--line\);[^}]*border-bottom:\s*1px solid var\(--line\);/);
   assert.match(css, /\.hero-metrics p\s*\{[^}]*color:\s*var\(--muted\);[^}]*font-size:\s*var\(--font-note\);/);
   assertResponsiveHeroBreakpoints(css);
+  assertResponsiveMemoryMetric(css);
   assert.doesNotMatch(css, /\.baseline-grid/);
 });
 
@@ -216,8 +245,8 @@ test('hero source contracts reject review mutations without depending on compact
 
   assert.throws(() => assertResponsiveHeroBreakpoints(swappedBreakpoints));
   assert.throws(() => assertResponsiveHeroBreakpoints(laterOverride));
-  assert.doesNotThrow(() => assertSixMetricItems(spaciousMetrics));
-  assert.throws(() => assertSixMetricItems(seventhMetric));
+  assert.doesNotThrow(() => assertFiveMetricItems(spaciousMetrics));
+  assert.throws(() => assertFiveMetricItems(seventhMetric));
 });
 
 test('hero columns reject a global override between tablet and mobile media blocks', async () => {
@@ -248,8 +277,8 @@ test('hero columns ignore similarly prefixed non-target classes', async () => {
 test('hero columns reject a second declaration inside the mobile media block', async () => {
   const css = await readFile('src/styles.css', 'utf8');
   const insideMobileOverride = css.replace(
-    '  .hero-metrics { grid-template-columns: 1fr; }\n}',
-    '  .hero-metrics { grid-template-columns: 1fr; }\n  .hero-metrics { grid-template-columns: 1fr 1fr; }\n}',
+    '  .hero-metrics { grid-template-columns: 1fr; }',
+    '  .hero-metrics { grid-template-columns: 1fr; }\n  .hero-metrics { grid-template-columns: 1fr 1fr; }',
   );
 
   assert.throws(() => assertResponsiveHeroBreakpoints(insideMobileOverride));
