@@ -130,17 +130,27 @@ test('validator allows real data URLs in srcset but rejects a later remote candi
 
 test('validator requires approved tutorial URLs verbatim', async () => {
   const html = await getGeneratedHtml();
-  const approved = 'https://www.bilibili.com/video/BV1yv78zQEnD/?share_source=copy_web&amp;vd_source=91e679d463038976da1b6275f56aec3c&amp;t=1355';
-  const variants = [
-    ['protocol', approved.replace('https://', 'http://')],
-    ['port', approved.replace('www.bilibili.com/', 'www.bilibili.com:443/')],
-    ['query', approved.replace('t=1355', 't=1356')],
-    ['fragment', `${approved}#changed`],
+  const approvedLinks = [
+    'https://www.bilibili.com/video/BV1yv78zQEnD/?share_source=copy_web&amp;vd_source=91e679d463038976da1b6275f56aec3c&amp;t=1355',
+    'https://www.bilibili.com/video/BV1h2NCzBE6u/?share_source=copy_web&amp;vd_source=91e679d463038976da1b6275f56aec3c',
   ];
 
-  for (const [label, href] of variants) {
-    const contaminated = html.replace(approved, href);
-    assert.throws(() => validateHtml(contaminated), /exact approved tutorial links/, label);
+  for (const approved of approvedLinks) {
+    const variants = [
+      ['protocol', approved.replace('https://', 'http://')],
+      ['port', approved.replace('www.bilibili.com/', 'www.bilibili.com:443/')],
+      ['query', approved.replace('vd_source=91e679d463038976da1b6275f56aec3c', 'vd_source=changed')],
+      ['fragment', `${approved}#changed`],
+    ];
+
+    for (const [label, href] of variants) {
+      const contaminated = html.replace(approved, href);
+      assert.throws(
+        () => validateHtml(contaminated),
+        /exact approved tutorial links/,
+        `${approved} ${label}`,
+      );
+    }
   }
 });
 

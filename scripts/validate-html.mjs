@@ -6,6 +6,7 @@ import { resolve } from 'node:path';
 const approvedTutorialLinks = [
   'https://www.bilibili.com/video/BV1yv78zQEnD/?share_source=copy_web&vd_source=91e679d463038976da1b6275f56aec3c&t=1355',
   'https://www.bilibili.com/video/BV1mvFpzoEp6/?share_source=copy_web&vd_source=91e679d463038976da1b6275f56aec3c',
+  'https://www.bilibili.com/video/BV1h2NCzBE6u/?share_source=copy_web&vd_source=91e679d463038976da1b6275f56aec3c',
 ];
 
 function decodeNumericCharacterReferences(value) {

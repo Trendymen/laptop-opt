@@ -56,6 +56,14 @@ h1 { max-width: 6em; margin: 3.8rem 0 1.5rem; font-size: clamp(4rem, 6vw, 7.2rem
 .media-step p { max-width: 52rem; margin: 0 0 1.25rem; color: var(--muted); }
 .media-step img, .media-stack img { width: 100%; border: 1px solid var(--line); background: var(--surface); }
 .media-stack { display: grid; grid-template-columns: 1fr; gap: 1.75rem; }
+.recovery-paths { display: grid; grid-template-columns: .85fr 1.15fr; gap: 1.5rem; margin-top: 4.5rem; }
+.recovery-path { padding: 2rem; border: 1px solid var(--line); background: var(--surface); }
+.recovery-path--default { border-left: 4px solid var(--danger); }
+.recovery-path h3 { margin: .75rem 0 0; font-size: 1.8rem; }
+.recovery-path ol { margin: 1.25rem 0 0; padding-left: 1.4rem; }
+.recovery-path li { padding: .9rem 0; border-bottom: 1px solid var(--line); color: var(--muted); }
+.recovery-path li:last-child { border-bottom: 0; }
+.recovery-path strong { color: var(--text); }
 figure { margin: 0; }
 figcaption { padding-top: .8rem; color: var(--muted); font-size: var(--font-note); }
 .stable-result { display: grid; grid-template-columns: 1fr minmax(22rem, .55fr); gap: 3rem; align-items: center; padding: 3rem; border-block: 2px solid var(--acid); background: linear-gradient(135deg, #111119, #0a0a0d); }
@@ -74,6 +82,14 @@ figcaption { padding-top: .8rem; color: var(--muted); font-size: var(--font-note
 .timing-value-note { margin: 2rem 0; padding: 1.5rem; border: 1px solid var(--line); background: #11151a; }
 .timing-value-note strong { color: var(--acid); }
 .timing-value-note p { margin: .8rem 0 0; color: var(--muted); }
+.timing-values { width: 100%; margin-top: 1.5rem; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.timing-values caption { padding: 0 0 .6rem; color: var(--text); font-size: 1rem; font-weight: 800; text-align: left; }
+.timing-values th, .timing-values td { padding: .7rem .85rem; border: 1px solid var(--line); text-align: left; }
+.timing-values thead th { color: var(--muted); font-size: var(--font-note); }
+.timing-values tbody th { color: var(--text); font-weight: 700; }
+.timing-values tbody td:first-child { width: 4.5rem; color: var(--muted); }
+.timing-values tbody td:last-child { width: 9rem; }
+.timing-values code { color: var(--acid); font-family: "SFMono-Regular", Consolas, monospace; font-size: 1rem; font-weight: 800; }
 .umaf-stack { display: grid; grid-template-columns: 1fr; gap: 1.75rem; margin-top: 2rem; }
 .umaf-image { width: 100%; height: auto; object-fit: contain; border: 1px solid var(--line); }
 .umaf-warning { margin-top: 2rem; padding: 1.3rem 1.5rem; border-left: 4px solid var(--danger); background: #171216; }
@@ -103,7 +119,7 @@ html[data-capture="true"] *, html[data-capture="true"] *::before, html[data-capt
   .hero-media img { height: auto; object-fit: contain; }
   .hero-metrics { grid-template-columns: 1fr 1fr; }
   .chapter-heading { grid-template-columns: 1fr; }
-  .tutorial, .stable-result, .future-grid, .tools-list { grid-template-columns: 1fr; }
+  .tutorial, .stable-result, .future-grid, .tools-list, .recovery-paths { grid-template-columns: 1fr; }
   .tutorial-link { width: 100%; }
   .stable-result { padding: 2rem 1.5rem; }
 }

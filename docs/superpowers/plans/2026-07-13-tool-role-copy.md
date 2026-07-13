@@ -16,15 +16,16 @@
 - UMAF is described as a high-risk AMD PBS/CBS/Overclocking firmware configuration entry, not merely a recovery reference.
 - The machine-specific `约 80MB` UMAF startup partition warning and F2 entry path appear in both section 02 and the final UMAF appendix, but not in the Hero.
 - The section 03 title includes `UXTU（Universal x86 Tuning Utility）· AMD Curve Optimizer · All Core Offset -20`.
-- Section 03 is titled `当前关键设置、截图与教程`, states both completed prerequisite lines before its screenshots, and contains both existing Bilibili tutorials.
-- Within section 03 the source order is settings summary, tutorial 01, tutorial 02, then the first `cpu-frequency` screenshot.
-- Section 04 is titled `异常恢复` and contains only the UXTU recovery instructions and image.
-- The two vague equals-sign labels are removed; all 10 images and both tutorial URLs remain unchanged.
+- Section 03 is titled `当前关键设置、截图与教程`, states both completed prerequisite lines before its screenshots, and contains tutorials 01, 02, and 03.
+- Within section 03 the source order is settings summary, tutorial 01, tutorial 02, tutorial 03, then the first `cpu-frequency` screenshot.
+- Section 04 is titled `异常恢复` and contains the UXTU recovery instructions plus `回到最初优化调校` and `完全恢复默认` guidance; tutorial references remain plain text rather than duplicated links.
+- The two vague equals-sign labels are removed; all 10 images and all three approved tutorial URLs remain unchanged.
 - The section 01 temperature card says `游戏时 CPU 温度` and `使用上风压散热器后，游戏时 CPU 温度稳定在 85–87°C 可接受。`.
 - The section 02 UMAF `.tool-warning` has `1.5rem` bottom spacing before the following F2 entry paragraph.
 - The Hero memory-timing card displays `C36 · 5600` and `默认 C42 / 5200 MT/s → 当前 C36 / 5600 MT/s；已完成超频和时序收紧，内存时序已调整并稳定运行。`.
 - The final ZenTimings stable-result copy includes `内存从默认 C42 / 5200 MT/s 调整为当前 C36 / 5600 MT/s，并稳定运行。`.
 - The final UMAF appendix gives the complete hexadecimal rollback list without `0x` prefixes, converted from ZenTimings current stable decimal values; `tWR` remains `40` as an explicit exception and all other pictured `Auto` fields remain `Auto`.
+- The rollback values are presented as two numbered tables with exactly one parameter and hexadecimal value per row.
 
 ---
 
@@ -71,13 +72,14 @@ Extend the existing priority test in `tests/content.test.mjs` with:
   ));
   assert.ok(settingsText.includes('CCD1 已关闭 · BIOS 已解锁 · UMAF 已安装'));
   assert.ok(settingsText.includes('CPU 睿频已关闭 · 高性能电源计划已调出'));
-  for (const marker of ['BV1yv78zQEnD', 'BV1mvFpzoEp6']) {
+  for (const marker of ['BV1yv78zQEnD', 'BV1mvFpzoEp6', 'BV1h2NCzBE6u']) {
     assert.ok(settingsText.includes(marker), `tutorial must be in settings: ${marker}`);
   }
   assertInOrder(template.slice(settingsStart, settingsEnd), [
     'class="settings-summary"',
     'id="tutorial-1"',
     'BV1mvFpzoEp6',
+    'BV1h2NCzBE6u',
     '{{asset:cpu-frequency}}',
   ]);
 
@@ -85,7 +87,8 @@ Extend the existing priority test in `tests/content.test.mjs` with:
   const recoveryEnd = template.indexOf('</section>', recoveryStart);
   const recoveryText = visibleText(template.slice(recoveryStart, recoveryEnd));
   assert.ok(recoveryText.includes('UXTU 没自启，手动打开也没反应'));
-  assert.doesNotMatch(recoveryText, /BV1yv78zQEnD|BV1mvFpzoEp6|教程 01|教程 02/);
+  assert.ok(recoveryText.includes('回到最初优化调校'));
+  assert.ok(recoveryText.includes('完全恢复默认'));
 
   assert.equal(
     (template.match(/约 80MB 的 UMAF 启动分区不可删除或格式化/g) ?? []).length,
@@ -101,12 +104,12 @@ Extend the existing priority test in `tests/content.test.mjs` with:
   for (const phrase of [
     '以 ZenTimings 当前稳定十进制值为基准换算',
     'tWR 例外：ZenTimings 显示 66，通常换算为 42；回退时仍填写 40',
-    'DDR SPD Timing：tCL 24 · tRCD 26 · tRP 26 · tRAS 4A · tRC 70 · tWR 40 · tRFC1 230 · tRFC2 17C · tRFCsb 12C · tRTP 0C · tRRDL 0A · tRRDS 08 · tFAW 20 · tWTRL 12 · tWTRS 06',
-    'DDR Non-SPD Timing：tRDRDSCL 06 · tWRWRSCL 0A · tWRRD 06 · tRDWR 10',
     '其余 Auto 字段保持 Auto',
     '图片用于找位置，本列表用于回退填写',
     '填写并重启后，再用 ZenTimings 核对实际生效值',
   ]) assert.ok(appendixText.includes(phrase), `missing rollback hex list: ${phrase}`);
+  assert.equal((appendix.match(/class="timing-values"/g) ?? []).length, 2);
+  assert.match(appendix, /<td>06<\/td><th scope="row">tWR<\/th><td><code>40<\/code>/);
   assert.doesNotMatch(template, /AIDA64 · TM5 · ZenTimings/);
   assert.ok(template.includes('游戏时 CPU 温度'));
   assert.ok(template.includes('使用上风压散热器后，游戏时 CPU 温度稳定在 85–87°C 可接受。'));
@@ -150,7 +153,7 @@ In `src/index.template.html`, keep the first three cards and replace the final c
 <article class="tool-risk"><small>固件设置 · 高风险</small><h3>UMAF</h3><p>用于进入 AMD PBS / CBS / Overclocking 隐藏菜单，修改内存频率、时序等真实固件参数；错误设置可能导致无法启动。</p><p class="tool-warning">本机约 80MB 的 UMAF 启动分区不可删除或格式化。</p><p>进入：开机或重启时持续按 F2，选择最右边第三项，再进入后续界面的第二项；详细安装与进入方法见第 03 章教程 01。</p></article>
 ```
 
-- [ ] **Step 4: Move both tutorials into section 03 and add the completed-settings summary**
+- [ ] **Step 4: Keep all three tutorials in section 03 and add the completed-settings summary**
 
 Change the section headings to:
 
@@ -162,10 +165,10 @@ Change the section headings to:
 Insert this block immediately after the section 03 heading and before its first screenshot:
 
 ```html
-<article class="settings-summary"><small>已完成前置设置</small><h3>CCD1 已关闭 · BIOS 已解锁 · UMAF 已安装</h3><h3>CPU 睿频已关闭 · 高性能电源计划已调出</h3><p>这些是当前机器已经完成的前置状态，不需要重复操作。需要重新安装、重新进入或回看步骤时，再看本章后面的教程 01 / 02。</p></article>
+<article class="settings-summary"><small>已完成前置设置</small><h3>CCD1 已关闭 · BIOS 已解锁 · UMAF 已安装</h3><h3>CPU 睿频已关闭 · 高性能电源计划已调出</h3><p>这些是当前机器已经完成的前置状态，不需要重复操作。需要重新安装、重新进入或回看步骤时，再看本章后面的教程 01 / 02 / 03。</p></article>
 ```
 
-Move both existing `<article class="tutorial">` elements unchanged from section 04 to immediately after `.settings-summary` and before the first `cpu-frequency` `.media-step` in section 03. Keep tutorial 01 before tutorial 02 and preserve both exact titles, BV numbers, descriptions, timestamps, URLs, `target`, and `rel` attributes. Section 04 must then contain only its heading and the existing UXTU recovery `.media-step`.
+Keep tutorial 01 before tutorial 02, append tutorial 03 (`BV1h2NCzBE6u`) after tutorial 02, and place all three before the first `cpu-frequency` `.media-step`. Preserve every exact URL, `target`, and `rel` attribute. Section 04 retains the UXTU recovery `.media-step` and appends the two recovery-path articles described in the latest specification.
 
 Replace the section 03 heading and paragraph with:
 
@@ -188,7 +191,7 @@ Replace the UMAF appendix header, then retain an updated warning paragraph in it
 ```html
 <h3>UMAF：填写回退值的固件入口</h3>
 <p>两张图用于定位 DDR SPD Timing 与 DDR Non-SPD Timing 字段；旧图部分数值与当前稳定结果不同，因此图片用于找位置，下面的列表用于回退填写。</p>
-<aside class="timing-value-note"><strong>回退十六进制值</strong><p>以 ZenTimings 当前稳定十进制值为基准换算。tWR 例外：ZenTimings 显示 66，通常换算为 42；回退时仍填写 40。</p><p><b>DDR SPD Timing：</b>tCL 24 · tRCD 26 · tRP 26 · tRAS 4A · tRC 70 · tWR 40 · tRFC1 230 · tRFC2 17C · tRFCsb 12C · tRTP 0C · tRRDL 0A · tRRDS 08 · tFAW 20 · tWTRL 12 · tWTRS 06</p><p><b>DDR Non-SPD Timing：</b>tRDRDSCL 06 · tWRWRSCL 0A · tWRRD 06 · tRDWR 10</p><p>其余 Auto 字段保持 Auto。填写并重启后，再用 ZenTimings 核对实际生效值。</p></aside>
+<aside class="timing-value-note"><strong>回退十六进制值</strong><p>以 ZenTimings 当前稳定十进制值为基准换算。tWR 例外：ZenTimings 显示 66，通常换算为 42；回退时仍填写 40。</p><table class="timing-values"><caption>DDR SPD Timing</caption><!-- 01–15：每行一个参数和值 --></table><table class="timing-values"><caption>DDR Non-SPD Timing</caption><!-- 01–04：每行一个参数和值 --></table><p>其余 Auto 字段保持 Auto。填写并重启后，再用 ZenTimings 核对实际生效值。</p></aside>
 <p class="umaf-warning">本机约 80MB 的 UMAF 启动分区不可删除或格式化。进入：开机或重启时持续按 F2，选择最右边第三项，再进入后续界面的第二项；详细安装与进入方法见第 03 章教程 01。</p>
 ```
 
@@ -228,7 +231,7 @@ npm test
 git diff --check
 ```
 
-Expected: 38 tests PASS after the later capture profile test is present, or the current suite count plus all new content assertions before that task; every asset placeholder remains unique and both tutorial URLs remain exact.
+Expected: the current suite plus all new content assertions PASS; every asset placeholder remains unique and all three tutorial URLs remain exact.
 
 - [ ] **Step 8: Commit**
 

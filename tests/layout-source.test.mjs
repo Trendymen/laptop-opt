@@ -264,15 +264,19 @@ test('evidence images stack vertically at their original ratios and the mobile h
   assert.match(template, /class="media-stack"/);
   assert.match(template, /class="umaf-stack"/);
   assert.equal((template.match(/class="umaf-image"/g) ?? []).length, 2);
-  assert.equal((template.match(/class="tutorial-meta"/g) ?? []).length, 2);
-  assert.equal((template.match(/class="tutorial-copy"/g) ?? []).length, 2);
-  assert.equal((template.match(/class="tutorial-link"/g) ?? []).length, 2);
+  assert.equal((template.match(/class="tutorial-meta"/g) ?? []).length, 3);
+  assert.equal((template.match(/class="tutorial-copy"/g) ?? []).length, 3);
+  assert.equal((template.match(/class="tutorial-link"/g) ?? []).length, 3);
   assert.doesNotMatch(template, /media-pair|umaf-grid|umaf-crop/);
   assert.match(css, /\.media-stack\s*\{[^}]*grid-template-columns:\s*1fr/);
   assert.match(css, /\.umaf-stack\s*\{[^}]*grid-template-columns:\s*1fr/);
   assert.match(css, /\.umaf-image\s*\{[^}]*height:\s*auto;[^}]*object-fit:\s*contain/);
   assert.match(css, /\.tutorial\s*\{[^}]*grid-template-columns:\s*8\.5rem minmax\(0, 1fr\) minmax\(15rem, 18rem\)/);
   assert.match(css, /\.tutorial-link\s*\{[^}]*display:\s*flex;[^}]*background:\s*var\(--acid\)/);
+  assert.match(css, /\.recovery-paths\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:/);
+  assert.match(css, /\.recovery-path--default\s*\{[^}]*border-left:\s*4px solid var\(--danger\)/);
+  assert.match(css, /\.timing-values\s*\{[^}]*width:\s*100%;[^}]*border-collapse:\s*collapse/);
+  assert.match(css, /\.timing-values caption\s*\{[^}]*text-align:\s*left/);
   assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.hero-media\s*\{\s*height:\s*auto;\s*\}[\s\S]*?\.hero-media img\s*\{[^}]*height:\s*auto;[^}]*object-fit:\s*contain/);
 
   const [spd, nonSpd] = await Promise.all([

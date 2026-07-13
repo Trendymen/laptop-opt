@@ -94,6 +94,7 @@ test('source prioritizes completed adjustments, actions, tools, evidence and mem
     'class="settings-summary"',
     'id="tutorial-1"',
     'BV1mvFpzoEp6',
+    'BV1h2NCzBE6u',
     '{{asset:cpu-frequency}}',
   ]);
   assert.ok(settingsText.includes(
@@ -101,15 +102,81 @@ test('source prioritizes completed adjustments, actions, tools, evidence and mem
   ));
   assert.ok(settingsText.includes('CCD1 已关闭 · BIOS 已解锁 · UMAF 已安装'));
   assert.ok(settingsText.includes('CPU 睿频已关闭 · 高性能电源计划已调出'));
-  for (const marker of ['BV1yv78zQEnD', 'BV1mvFpzoEp6']) {
+  for (const marker of ['BV1yv78zQEnD', 'BV1mvFpzoEp6', 'BV1h2NCzBE6u']) {
     assert.ok(settingsText.includes(marker), `tutorial must be in settings: ${marker}`);
   }
+  const tutorialThree = [...settingsSource.matchAll(/<article class="tutorial"[^>]*>([\s\S]*?)<\/article>/g)]
+    .map((match) => match[1])
+    .find((article) => article.includes('BV1h2NCzBE6u'));
+  assert.ok(tutorialThree, 'tutorial 03 must exist');
+  assert.equal(
+    tutorialThree.match(/<h3>([^<]+)<\/h3>/)?.[1],
+    '笔记本优化教程之内存篇，保姆级超详细教程，一个视频给你从底层逻辑讲透内存超频！小白看完也能学会AMD超频必看，适用于一切hx系列的au！演示机型：蛟龙16pro',
+  );
 
   const recoveryStart = template.indexOf('id="recovery"');
   const recoveryEnd = template.indexOf('</section>', recoveryStart);
-  const recoveryText = visibleText(template.slice(recoveryStart, recoveryEnd));
+  const recoverySource = template.slice(recoveryStart, recoveryEnd);
+  const recoveryText = visibleText(recoverySource);
   assert.ok(recoveryText.includes('UXTU 没自启，手动打开也没反应'));
-  assert.doesNotMatch(recoveryText, /BV1yv78zQEnD|BV1mvFpzoEp6|教程 01|教程 02/);
+  assertInOrder(recoverySource, [
+    'UXTU 没自启，手动打开也没反应',
+    '回到最初优化调校',
+    '完全恢复默认',
+  ]);
+  for (const phrase of [
+    '关闭 CCD1、完成 BIOS 解锁、安装并进入 UMAF',
+    '参考第 03 章教程 01',
+    '关闭 CPU 睿频、调出高性能电源计划',
+    '参考第 03 章教程 02',
+    '第 01 章的调校说明和第 03 章里的现有截图',
+    '内存频率和时序控制',
+    '参考附录里的参数',
+    '关闭 UXTU 开机自启',
+    '任务栏图标上右键退出 UXTU',
+    '取消当前全核负压',
+    '注册表设置重新开启 CPU 睿频',
+    '电源计划里把定频改为 0',
+    '不再使用自定义功耗模式',
+    '静音模式或狂暴模式',
+    '非游戏场景使用平衡模式',
+    '把 CCD1 重新打开',
+    '恢复 16 核 32 线程',
+    '内存超频设为 Disabled',
+    '5200 MT/s / C42',
+    '参考第 03 章教程 03',
+  ]) assert.ok(recoveryText.includes(phrase), `missing recovery path: ${phrase}`);
+  const recoveryPaths = [...recoverySource.matchAll(/<article class="recovery-path(?: [^"]+)?">([\s\S]*?)<\/article>/g)]
+    .map((match) => match[1]);
+  assert.equal(recoveryPaths.length, 2);
+  assert.deepEqual(
+    recoveryPaths.map((path) => ({
+      heading: path.match(/<h3>([^<]+)<\/h3>/)?.[1],
+      items: [...path.matchAll(/<li>([\s\S]*?)<\/li>/g)]
+        .map((match) => visibleText(match[1]).replace(/：\s+/g, '：').trim()),
+    })),
+    [
+      {
+        heading: '回到最初优化调校',
+        items: [
+          '固件前置：关闭 CCD1、完成 BIOS 解锁、安装并进入 UMAF；参考第 03 章教程 01。',
+          'CPU 与功耗：关闭 CPU 睿频、调出高性能电源计划并调整功耗限制；参考第 03 章教程 02，以及第 01 章的调校说明和第 03 章里的现有截图。',
+          '内存：内存频率和时序控制参考附录里的参数。',
+        ],
+      },
+      {
+        heading: '完全恢复默认',
+        items: [
+          '关闭 UXTU 开机自启；再在任务栏图标上右键退出 UXTU，取消当前全核负压。',
+          '参考第 03 章教程 02 里的注册表设置重新开启 CPU 睿频；在电源计划里把定频改为 0。',
+          '机械革命控制台里不再使用自定义功耗模式；游戏时改用静音模式或狂暴模式，非游戏场景使用平衡模式。',
+          '参考第 03 章教程 01 进入 UMAF，把 CCD1 重新打开，恢复 16 核 32 线程。',
+          '在 UMAF 里把内存超频设为 Disabled，恢复 5200 MT/s / C42 的默认内存设置；参考第 03 章教程 03。',
+        ],
+      },
+    ],
+  );
+  assert.doesNotMatch(recoverySource, /<a\b/);
 
   const completeUmafWarning = '本机约 80MB 的 UMAF 启动分区不可删除或格式化。进入：开机或重启时持续按 F2，选择最右边第三项，再进入后续界面的第二项；详细安装与进入方法见第 03 章教程 01。';
   const normalizedDocumentText = visibleText(template).replaceAll('。 进入：', '。进入：');
@@ -146,10 +213,39 @@ test('source prioritizes completed adjustments, actions, tools, evidence and mem
     '回退十六进制值',
     '以 ZenTimings 当前稳定十进制值为基准换算',
     'tWR 例外：ZenTimings 显示 66，通常换算为 42；回退时仍填写 40',
-    'DDR SPD Timing：tCL 24 · tRCD 26 · tRP 26 · tRAS 4A · tRC 70 · tWR 40 · tRFC1 230 · tRFC2 17C · tRFCsb 12C · tRTP 0C · tRRDL 0A · tRRDS 08 · tFAW 20 · tWTRL 12 · tWTRS 06',
-    'DDR Non-SPD Timing：tRDRDSCL 06 · tWRWRSCL 0A · tWRRD 06 · tRDWR 10',
     '其余 Auto 字段保持 Auto',
   ]) assert.ok(normalizedAppendixText.includes(phrase), `missing rollback copy: ${phrase}`);
+  const timingTables = [...appendix.matchAll(/<table class="timing-values">([\s\S]*?)<\/table>/g)]
+    .map((match) => match[1]);
+  assert.equal(timingTables.length, 2);
+  const expectedTimingTables = [
+    {
+      caption: 'DDR SPD Timing',
+      rows: [
+        ['01', 'tCL', '24'], ['02', 'tRCD', '26'], ['03', 'tRP', '26'],
+        ['04', 'tRAS', '4A'], ['05', 'tRC', '70'], ['06', 'tWR', '40'],
+        ['07', 'tRFC1', '230'], ['08', 'tRFC2', '17C'], ['09', 'tRFCsb', '12C'],
+        ['10', 'tRTP', '0C'], ['11', 'tRRDL', '0A'], ['12', 'tRRDS', '08'],
+        ['13', 'tFAW', '20'], ['14', 'tWTRL', '12'], ['15', 'tWTRS', '06'],
+      ],
+    },
+    {
+      caption: 'DDR Non-SPD Timing',
+      rows: [
+        ['01', 'tRDRDSCL', '06'], ['02', 'tWRWRSCL', '0A'],
+        ['03', 'tWRRD', '06'], ['04', 'tRDWR', '10'],
+      ],
+    },
+  ];
+  for (const [index, expected] of expectedTimingTables.entries()) {
+    const table = timingTables[index];
+    assert.ok(table.includes(`<caption>${expected.caption}</caption>`));
+    assert.deepEqual(
+      [...table.matchAll(/<tr><td>(\d{2})<\/td><th scope="row">([^<]+)<\/th><td><code>([^<]+)<\/code><\/td><\/tr>/g)]
+        .map((match) => match.slice(1)),
+      expected.rows,
+    );
+  }
   assert.doesNotMatch(
     appendixText,
     /UMAF：修改这些固件参数的位置，也是按记录值回退的入口/,
@@ -218,7 +314,10 @@ test('rendered copy matches the approved device handoff facts', async () => {
     'REFERENCE RULE / 使用原则',
     '全网最细！保姆级笔记本优化教程之cpu篇，小白也能降压定频，拯救你的cpu！适配于拯救者，鸡哥等绝大多数机型，演示机型8945hx 5070ti蛟龙16pro',
     '蛟龙16pro降温静音焚决（同类型笔记本直接可以抄作业）',
-    'BV1yv78zQEnD', '22:35', 'BV1mvFpzoEp6',
+    '笔记本优化教程之内存篇，保姆级超详细教程，一个视频给你从底层逻辑讲透内存超频！小白看完也能学会AMD超频必看，适用于一切hx系列的au！演示机型：蛟龙16pro',
+    'BV1yv78zQEnD', '22:35', 'BV1mvFpzoEp6', 'BV1h2NCzBE6u',
+    '回到最初优化调校', '完全恢复默认',
+    '关闭 UXTU 开机自启', '恢复 16 核 32 线程', '5200 MT/s / C42',
   ];
   for (const phrase of required) assert.ok(text.includes(phrase), `missing: ${phrase}`);
 
@@ -227,6 +326,7 @@ test('rendered copy matches the approved device handoff facts', async () => {
   assert.deepEqual(bilibiliHrefs, [
     'https://www.bilibili.com/video/BV1yv78zQEnD/?share_source=copy_web&vd_source=91e679d463038976da1b6275f56aec3c&t=1355',
     'https://www.bilibili.com/video/BV1mvFpzoEp6/?share_source=copy_web&vd_source=91e679d463038976da1b6275f56aec3c',
+    'https://www.bilibili.com/video/BV1h2NCzBE6u/?share_source=copy_web&vd_source=91e679d463038976da1b6275f56aec3c',
   ]);
 
   const forbidden = ['单文件 HTML', 'Base64', 'Data URI', '图片内联', '离线查看', '交付格式', '交接', '不要误删旁边的压缩包'];

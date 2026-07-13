@@ -51,9 +51,10 @@
 
       <section class="chapter" id="settings" data-reveal>
         <header class="chapter-heading"><span>03</span><div><h2>当前关键设置、截图与教程</h2><p>以下截图用于确认设置位置和恢复当前记录值，不是其他设备可以直接照抄的通用参数。</p></div></header>
-        <article class="settings-summary"><small>已完成前置设置</small><h3>CCD1 已关闭 · BIOS 已解锁 · UMAF 已安装</h3><h3>CPU 睿频已关闭 · 高性能电源计划已调出</h3><p>这些是当前机器已经完成的前置状态，不需要重复操作。需要重新安装、重新进入或回看步骤时，再看本章后面的教程 01 / 02。</p></article>
+        <article class="settings-summary"><small>已完成前置设置</small><h3>CCD1 已关闭 · BIOS 已解锁 · UMAF 已安装</h3><h3>CPU 睿频已关闭 · 高性能电源计划已调出</h3><p>这些是当前机器已经完成的前置状态，不需要重复操作。需要重新安装、重新进入或回看步骤时，再看本章后面的教程 01 / 02 / 03。</p></article>
         <article class="tutorial" id="tutorial-1"><div class="tutorial-meta"><small>教程 01 · BV1yv78zQEnD · 22:35</small></div><div class="tutorial-copy"><h3>全网最细！保姆级笔记本优化教程之cpu篇，小白也能降压定频，拯救你的cpu！适配于拯救者，鸡哥等绝大多数机型，演示机型8945hx 5070ti蛟龙16pro</h3><p>用于关闭 CCD1、BIOS 解锁、UMAF 安装和进入方式。</p></div><a class="tutorial-link" href="https://www.bilibili.com/video/BV1yv78zQEnD/?share_source=copy_web&amp;vd_source=91e679d463038976da1b6275f56aec3c&amp;t=1355" target="_blank" rel="noreferrer"><strong>打开 B 站教程 ↗</strong><span>www.bilibili.com/video/BV1yv78zQEnD</span></a></article>
         <article class="tutorial"><div class="tutorial-meta"><small>教程 02 · BV1mvFpzoEp6</small></div><div class="tutorial-copy"><h3>蛟龙16pro降温静音焚决（同类型笔记本直接可以抄作业）</h3><p>用于关闭 CPU 睿频、调出高性能电源计划和理解降温思路。</p></div><a class="tutorial-link" href="https://www.bilibili.com/video/BV1mvFpzoEp6/?share_source=copy_web&amp;vd_source=91e679d463038976da1b6275f56aec3c" target="_blank" rel="noreferrer"><strong>打开 B 站教程 ↗</strong><span>www.bilibili.com/video/BV1mvFpzoEp6</span></a></article>
+        <article class="tutorial"><div class="tutorial-meta"><small>教程 03 · BV1h2NCzBE6u</small></div><div class="tutorial-copy"><h3>笔记本优化教程之内存篇，保姆级超详细教程，一个视频给你从底层逻辑讲透内存超频！小白看完也能学会AMD超频必看，适用于一切hx系列的au！演示机型：蛟龙16pro</h3><p>用于理解 AMD HX 平台内存超频的底层逻辑、频率和时序设置，并在完全恢复默认时参考。</p></div><a class="tutorial-link" href="https://www.bilibili.com/video/BV1h2NCzBE6u/?share_source=copy_web&amp;vd_source=91e679d463038976da1b6275f56aec3c" target="_blank" rel="noreferrer"><strong>打开 B 站教程 ↗</strong><span>www.bilibili.com/video/BV1h2NCzBE6u</span></a></article>
         <div class="media-step"><h3>接通电源 5000 MHz</h3><p>Windows 高性能电源计划：电池 4500 MHz，接通电源 5000 MHz。</p><img src="{{asset:cpu-frequency}}" alt="Windows 高性能电源计划处理器最大频率设置"></div>
         <div class="media-step"><h3>CPU 功耗上限：SPL 65W · sPPT 85W · fPPT 85W</h3><p>机械革命控制台自定义模式限制 CPU 功耗上限，目的为控制极限 CPU 温度。</p><img src="{{asset:control-power}}" alt="机械革命控制台自定义模式 CPU 功耗限制"></div>
         <div class="media-stack"><figure><img src="{{asset:gpu-mode}}" alt="机械革命控制台独显直连设置"><figcaption>显卡模式：独显直连</figcaption></figure><figure><img src="{{asset:console-power-mode}}" alt="机械革命控制台高性能电源模式关闭"><figcaption>高性能电源模式保持关闭</figcaption></figure></div>
@@ -61,14 +62,42 @@
       </section>
 
       <section class="chapter" id="recovery" data-reveal>
-        <header class="chapter-heading"><span>04</span><div><h2>异常恢复</h2></div></header>
+        <header class="chapter-heading"><span>04</span><div><h2>异常恢复</h2><p>先处理 UXTU 异常；需要回到本文优化基线或彻底恢复默认时，再按下方对应路径操作。</p></div></header>
         <div class="media-step recovery"><h3>UXTU 没自启，手动打开也没反应</h3><p>删除 AppData\Local\JamesCJ60 下截图红圈所示的 Universal x86 Tuning Utility 配置文件夹。删除后重新打开 UXTU，并开启“开机自启”和“开机自启自动应用配置”。</p><img src="{{asset:uxtu-recovery}}" alt="UXTU 无法启动时需要删除的配置文件夹"></div>
+        <div class="recovery-paths">
+          <article class="recovery-path"><small>恢复到本文记录</small><h3>回到最初优化调校</h3><ol><li><strong>固件前置：</strong>关闭 CCD1、完成 BIOS 解锁、安装并进入 UMAF；参考第 03 章教程 01。</li><li><strong>CPU 与功耗：</strong>关闭 CPU 睿频、调出高性能电源计划并调整功耗限制；参考第 03 章教程 02，以及第 01 章的调校说明和第 03 章里的现有截图。</li><li><strong>内存：</strong>内存频率和时序控制参考附录里的参数。</li></ol></article>
+          <article class="recovery-path recovery-path--default"><small>撤销全部调校</small><h3>完全恢复默认</h3><ol><li>关闭 UXTU 开机自启；再在任务栏图标上右键退出 UXTU，取消当前全核负压。</li><li>参考第 03 章教程 02 里的注册表设置重新开启 CPU 睿频；在电源计划里把定频改为 0。</li><li>机械革命控制台里不再使用自定义功耗模式；游戏时改用静音模式或狂暴模式，非游戏场景使用平衡模式。</li><li>参考第 03 章教程 01 进入 UMAF，把 CCD1 重新打开，恢复 16 核 32 线程。</li><li>在 UMAF 里把内存超频设为 Disabled，恢复 5200 MT/s / C42 的默认内存设置；参考第 03 章教程 03。</li></ol></article>
+        </div>
       </section>
 
       <section class="chapter memory-chapter" id="memory-appendix" data-reveal>
         <header class="chapter-heading"><span>附录</span><div><h2>内存超频与时序记录</h2><p>内存超频和时序已经调整完成；本节只用于确认当前结果和按已记录字段回退。</p></div></header>
         <div class="stable-result"><div><small>CURRENT STABLE RESULT</small><h3>5600 MT/s 正常保持</h3><p>原装 32GB 单条已经替换为 16GB × 2 双通道。内存从默认 C42 / 5200 MT/s 调整为当前 C36 / 5600 MT/s，并稳定运行。内存超频已完成，内存时序已调整并稳定运行；不把本节作为继续提高频率的建议。</p><p><strong>ZenTimings：核对当前实际生效的内存参数</strong></p><p>这张只读记录用于确认重启后 5600 MT/s、当前时序和控制器相关参数是否实际生效；ZenTimings 不负责修改参数，也不替代稳定性测试。</p></div><img src="{{asset:memory-stable}}" alt="ZenTimings 显示的当前稳定内存参数"></div>
-        <div class="umaf-reference"><header><small>局部回退 / 恢复参考</small><h3>UMAF：填写回退值的固件入口</h3><p>两张图用于定位 DDR SPD Timing 与 DDR Non-SPD Timing 字段；旧图部分数值与当前稳定结果不同，因此图片用于找位置，下面的列表用于回退填写。</p></header><aside class="timing-value-note"><strong>回退十六进制值</strong><p>以 ZenTimings 当前稳定十进制值为基准换算。tWR 例外：ZenTimings 显示 66，通常换算为 42；回退时仍填写 40。</p><p><b>DDR SPD Timing：</b>tCL 24 · tRCD 26 · tRP 26 · tRAS 4A · tRC 70 · tWR 40 · tRFC1 230 · tRFC2 17C · tRFCsb 12C · tRTP 0C · tRRDL 0A · tRRDS 08 · tFAW 20 · tWTRL 12 · tWTRS 06</p><p><b>DDR Non-SPD Timing：</b>tRDRDSCL 06 · tWRWRSCL 0A · tWRRD 06 · tRDWR 10</p><p>其余 Auto 字段保持 Auto。填写并重启后，再用 ZenTimings 核对实际生效值。</p></aside><div class="umaf-stack"><figure><img class="umaf-image" src="{{asset:umaf-spd}}" alt="UMAF DDR SPD Timing 已记录字段"><figcaption>DDR SPD Timing · 已记录字段</figcaption></figure><figure><img class="umaf-image" src="{{asset:umaf-non-spd}}" alt="UMAF DDR Non-SPD Timing 已记录字段"><figcaption>DDR Non-SPD Timing · 已记录字段</figcaption></figure></div><p class="umaf-warning">本机约 80MB 的 UMAF 启动分区不可删除或格式化。进入：开机或重启时持续按 F2，选择最右边第三项，再进入后续界面的第二项；详细安装与进入方法见第 03 章教程 01。</p></div>
+        <div class="umaf-reference"><header><small>局部回退 / 恢复参考</small><h3>UMAF：填写回退值的固件入口</h3><p>两张图用于定位 DDR SPD Timing 与 DDR Non-SPD Timing 字段；旧图部分数值与当前稳定结果不同，因此图片用于找位置，下面的列表用于回退填写。</p></header><aside class="timing-value-note"><strong>回退十六进制值</strong><p>以 ZenTimings 当前稳定十进制值为基准换算。tWR 例外：ZenTimings 显示 66，通常换算为 42；回退时仍填写 40。</p>
+          <table class="timing-values"><caption>DDR SPD Timing</caption><thead><tr><th scope="col">序号</th><th scope="col">参数</th><th scope="col">十六进制值</th></tr></thead><tbody>
+            <tr><td>01</td><th scope="row">tCL</th><td><code>24</code></td></tr>
+            <tr><td>02</td><th scope="row">tRCD</th><td><code>26</code></td></tr>
+            <tr><td>03</td><th scope="row">tRP</th><td><code>26</code></td></tr>
+            <tr><td>04</td><th scope="row">tRAS</th><td><code>4A</code></td></tr>
+            <tr><td>05</td><th scope="row">tRC</th><td><code>70</code></td></tr>
+            <tr><td>06</td><th scope="row">tWR</th><td><code>40</code></td></tr>
+            <tr><td>07</td><th scope="row">tRFC1</th><td><code>230</code></td></tr>
+            <tr><td>08</td><th scope="row">tRFC2</th><td><code>17C</code></td></tr>
+            <tr><td>09</td><th scope="row">tRFCsb</th><td><code>12C</code></td></tr>
+            <tr><td>10</td><th scope="row">tRTP</th><td><code>0C</code></td></tr>
+            <tr><td>11</td><th scope="row">tRRDL</th><td><code>0A</code></td></tr>
+            <tr><td>12</td><th scope="row">tRRDS</th><td><code>08</code></td></tr>
+            <tr><td>13</td><th scope="row">tFAW</th><td><code>20</code></td></tr>
+            <tr><td>14</td><th scope="row">tWTRL</th><td><code>12</code></td></tr>
+            <tr><td>15</td><th scope="row">tWTRS</th><td><code>06</code></td></tr>
+          </tbody></table>
+          <table class="timing-values"><caption>DDR Non-SPD Timing</caption><thead><tr><th scope="col">序号</th><th scope="col">参数</th><th scope="col">十六进制值</th></tr></thead><tbody>
+            <tr><td>01</td><th scope="row">tRDRDSCL</th><td><code>06</code></td></tr>
+            <tr><td>02</td><th scope="row">tWRWRSCL</th><td><code>0A</code></td></tr>
+            <tr><td>03</td><th scope="row">tWRRD</th><td><code>06</code></td></tr>
+            <tr><td>04</td><th scope="row">tRDWR</th><td><code>10</code></td></tr>
+          </tbody></table>
+          <p>其余 Auto 字段保持 Auto。填写并重启后，再用 ZenTimings 核对实际生效值。</p></aside><div class="umaf-stack"><figure><img class="umaf-image" src="{{asset:umaf-spd}}" alt="UMAF DDR SPD Timing 已记录字段"><figcaption>DDR SPD Timing · 已记录字段</figcaption></figure><figure><img class="umaf-image" src="{{asset:umaf-non-spd}}" alt="UMAF DDR Non-SPD Timing 已记录字段"><figcaption>DDR Non-SPD Timing · 已记录字段</figcaption></figure></div><p class="umaf-warning">本机约 80MB 的 UMAF 启动分区不可删除或格式化。进入：开机或重启时持续按 F2，选择最右边第三项，再进入后续界面的第二项；详细安装与进入方法见第 03 章教程 01。</p></div>
       </section>
     </main>
 
