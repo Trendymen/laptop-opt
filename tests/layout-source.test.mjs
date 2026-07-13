@@ -3,12 +3,8 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import sharp from 'sharp';
 
-function extractBalancedBlock(source, marker) {
-  const markerIndex = source.indexOf(marker);
-  assert.notEqual(markerIndex, -1, `missing block marker: ${marker}`);
-  const openingBrace = source.indexOf('{', markerIndex + marker.length);
-  assert.notEqual(openingBrace, -1, `missing opening brace after: ${marker}`);
-
+function findMatchingBrace(source, openingBrace) {
+  assert.equal(source[openingBrace], '{', 'brace scan must start at an opening brace');
   let depth = 0;
   let quote = '';
   let inComment = false;
@@ -36,16 +32,80 @@ function extractBalancedBlock(source, marker) {
       depth += 1;
     } else if (character === '}') {
       depth -= 1;
-      if (depth === 0) {
-        return {
-          markerIndex,
-          endIndex: index + 1,
-          body: source.slice(openingBrace + 1, index),
-        };
-      }
+      if (depth === 0) return index;
     }
   }
-  assert.fail(`missing closing brace after: ${marker}`);
+  assert.fail(`missing closing brace at offset ${openingBrace}`);
+}
+
+function extractBalancedBlock(source, marker) {
+  const markerIndex = source.indexOf(marker);
+  assert.notEqual(markerIndex, -1, `missing block marker: ${marker}`);
+  const openingBrace = source.indexOf('{', markerIndex + marker.length);
+  assert.notEqual(openingBrace, -1, `missing opening brace after: ${marker}`);
+  const closingBrace = findMatchingBrace(source, openingBrace);
+  return {
+    markerIndex,
+    endIndex: closingBrace + 1,
+    body: source.slice(openingBrace + 1, closingBrace),
+  };
+}
+
+function scanCssRules(css) {
+  const rules = [];
+
+  function scanRange(start, end) {
+    let cursor = start;
+    while (cursor < end) {
+      let boundary = -1;
+      let boundaryType = '';
+      let quote = '';
+      let inComment = false;
+      for (let index = cursor; index < end; index += 1) {
+        const character = css[index];
+        const nextCharacter = css[index + 1];
+        if (inComment) {
+          if (character === '*' && nextCharacter === '/') {
+            inComment = false;
+            index += 1;
+          }
+          continue;
+        }
+        if (quote) {
+          if (character === '\\') index += 1;
+          else if (character === quote) quote = '';
+          continue;
+        }
+        if (character === '/' && nextCharacter === '*') {
+          inComment = true;
+          index += 1;
+        } else if (character === '"' || character === "'") {
+          quote = character;
+        } else if (character === '{' || character === ';') {
+          boundary = index;
+          boundaryType = character === '{' ? 'block' : 'statement';
+          break;
+        }
+      }
+
+      if (boundary === -1) break;
+      if (boundaryType === 'statement') {
+        cursor = boundary + 1;
+        continue;
+      }
+
+      const closingBrace = findMatchingBrace(css, boundary);
+      assert.ok(closingBrace < end, 'CSS rule must close inside its containing block');
+      const selector = css.slice(cursor, boundary).replace(/\/\*[\s\S]*?\*\//g, ' ').trim();
+      const body = css.slice(boundary + 1, closingBrace);
+      if (selector.startsWith('@')) scanRange(boundary + 1, closingBrace);
+      else if (selector) rules.push({ selector, body });
+      cursor = closingBrace + 1;
+    }
+  }
+
+  scanRange(0, css.length);
+  return rules;
 }
 
 function extractHeroMetricsMarkup(template) {
@@ -68,8 +128,9 @@ function assertSixMetricItems(template) {
 
 function collectHeroMetricColumnValues(css) {
   const values = [];
-  for (const rule of css.matchAll(/\.hero-metrics(?![-\w])\s*\{([^{}]*)\}/g)) {
-    for (const declaration of rule[1].matchAll(/\bgrid-template-columns\s*:\s*([^;]+)\s*;?/g)) {
+  for (const rule of scanCssRules(css)) {
+    if (!/\.hero-metrics(?![-\w])/.test(rule.selector)) continue;
+    for (const declaration of rule.body.matchAll(/\bgrid-template-columns\s*:\s*([^;]+)\s*;?/g)) {
       values.push(declaration[1].trim().replace(/\s+/g, ' '));
     }
   }
@@ -157,12 +218,27 @@ test('hero source contracts reject review mutations without depending on compact
 
 test('hero columns reject a global override between tablet and mobile media blocks', async () => {
   const css = await readFile('src/styles.css', 'utf8');
-  const betweenOverride = css.replace(
+  for (const selector of [
+    '.hero-metrics:not(.disabled)',
+    '.hero-metrics:is(.enabled)',
+    '.foo .hero-metrics > .cell',
+  ]) {
+    const betweenOverride = css.replace(
+      '@media (max-width: 600px)',
+      `${selector} { grid-template-columns: repeat(9, 1fr); }\n@media (max-width: 600px)`,
+    );
+    assert.throws(() => assertResponsiveHeroBreakpoints(betweenOverride));
+  }
+});
+
+test('hero columns ignore similarly prefixed non-target classes', async () => {
+  const css = await readFile('src/styles.css', 'utf8');
+  const nonTargetRule = css.replace(
     '@media (max-width: 600px)',
-    '.hero-metrics { grid-template-columns: repeat(9, 1fr); }\n@media (max-width: 600px)',
+    '.hero-metrics-extra { grid-template-columns: repeat(9, 1fr); }\n@media (max-width: 600px)',
   );
 
-  assert.throws(() => assertResponsiveHeroBreakpoints(betweenOverride));
+  assert.doesNotThrow(() => assertResponsiveHeroBreakpoints(nonTargetRule));
 });
 
 test('hero columns reject a second declaration inside the mobile media block', async () => {
