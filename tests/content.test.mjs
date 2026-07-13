@@ -38,7 +38,7 @@ test('source prioritizes completed adjustments, actions, tools, evidence and mem
     '内存超频已完成',
     '5600 MT/s',
     'C36 · 5600',
-    '默认 C42 / 5200 MT/s → 当前 C36 / 5600 MT/s',
+    '默认 C42 / 5200 MT/s → 当前 C36 / 5600 MT/s；已完成超频和时序收紧，内存时序已调整并稳定运行。',
     '内存时序已调整并稳定运行',
   ]) {
     assert.ok(heroText.includes(phrase), `missing hero adjustment: ${phrase}`);
@@ -136,18 +136,32 @@ test('source prioritizes completed adjustments, actions, tools, evidence and mem
   const appendixStart = template.indexOf('id="memory-appendix"');
   const appendix = template.slice(appendixStart);
   const appendixText = visibleText(appendix);
+  const normalizedAppendixText = appendixText.replaceAll('： ', '：');
   assert.ok(appendixText.includes(
     '内存从默认 C42 / 5200 MT/s 调整为当前 C36 / 5600 MT/s，并稳定运行。',
   ));
   for (const phrase of [
-    '回退填写清单（十六进制）',
-    'UMAF 方括号是十六进制设置记录，ZenTimings 是启动后的十进制生效值',
-    '回退时以 ZenTimings 当前稳定十进制值转换成 UMAF 十六进制填写',
-    'DDR SPD Timing：tCL 24 · tRCD 26 · tRP 26 · tRAS 4A · tRC 70 · tWR 40 · tRFC1 230 · tRFC2 17C · tRFCsb 12C · tRTP 0C · tRRDL 0A · tRRDS 08 · tFAW 20 · tWTRL 12 · tWTRS 06。',
-    'ZenTimings 显示 66，通常换算为 42；回退时仍填写 40',
-    'DDR Non-SPD Timing：tRDRDSCL 06 · tWRWRSCL 0A · tWRRD 06 · tRDWR 10。',
-    '其余截图中 Auto 字段保持 Auto。',
-  ]) assert.ok(appendixText.includes(phrase), `missing timing conversion note: ${phrase}`);
+    'UMAF：填写回退值的固件入口',
+    '图片用于找位置，下面的列表用于回退填写',
+    '回退十六进制值',
+    '以 ZenTimings 当前稳定十进制值为基准换算',
+    'tWR 例外：ZenTimings 显示 66，通常换算为 42；回退时仍填写 40',
+    'DDR SPD Timing：tCL 24 · tRCD 26 · tRP 26 · tRAS 4A · tRC 70 · tWR 40 · tRFC1 230 · tRFC2 17C · tRFCsb 12C · tRTP 0C · tRRDL 0A · tRRDS 08 · tFAW 20 · tWTRL 12 · tWTRS 06',
+    'DDR Non-SPD Timing：tRDRDSCL 06 · tWRWRSCL 0A · tWRRD 06 · tRDWR 10',
+    '其余 Auto 字段保持 Auto',
+  ]) assert.ok(normalizedAppendixText.includes(phrase), `missing rollback copy: ${phrase}`);
+  assert.doesNotMatch(
+    appendixText,
+    /UMAF：修改这些固件参数的位置，也是按记录值回退的入口/,
+  );
+  const timingNoteStart = appendix.indexOf('<aside class="timing-value-note"');
+  const timingNoteEnd = appendix.indexOf('</aside>', timingNoteStart);
+  const timingNote = appendix.slice(timingNoteStart, timingNoteEnd);
+  const timingNoteParagraphs = [...timingNote.matchAll(/<p>([\s\S]*?)<\/p>/g)];
+  assert.ok(timingNoteParagraphs.length > 0, 'timing note must contain paragraphs');
+  assert.ok(visibleText(timingNoteParagraphs.at(-1)[1]).includes(
+    '填写并重启后，再用 ZenTimings 核对实际生效值',
+  ));
   assert.doesNotMatch(appendixText, /\b0[xX][0-9A-F]+\b/);
   assert.doesNotMatch(
     appendixText,
@@ -189,7 +203,7 @@ test('rendered copy matches the approved device handoff facts', async () => {
     '开机自启', '开机自启自动应用配置',
     '16GB × 2 双通道', '5600 MT/s 正常保持',
     'ZenTimings：核对当前实际生效的内存参数',
-    'UMAF：修改这些固件参数的位置，也是按记录值回退的入口',
+    'UMAF：填写回退值的固件入口',
     '本机约 80MB 的 UMAF 启动分区不可删除或格式化', '持续按 F2',
     '修改前保留当前值截图',
     '接通电源 5000 MHz → 5200 MHz', '85–87°C',
