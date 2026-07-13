@@ -1,11 +1,12 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { assets } from '../src/assets.mjs';
 import { convertAsset } from './image-pipeline.mjs';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
-export const outputPath = resolve(root, 'dist/laptop-performance-handoff.html');
+const legacyOutputPath = resolve(root, 'dist/laptop-performance-handoff.html');
+export const outputPath = resolve(root, 'dist/index.html');
 
 export async function buildPage() {
   let html = await readFile(resolve(root, 'src/index.template.html'), 'utf8');
@@ -29,6 +30,7 @@ export async function buildPage() {
     throw new Error('Unresolved build placeholder remains in HTML');
   }
 
+  await rm(legacyOutputPath, { force: true });
   await mkdir(resolve(root, 'dist'), { recursive: true });
   await writeFile(outputPath, html, 'utf8');
   return report;

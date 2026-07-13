@@ -91,7 +91,7 @@ export function validateHtml(html) {
 
 const isMain = process.argv[1] === fileURLToPath(import.meta.url);
 if (isMain) {
-  const html = await readFile(resolve('dist/laptop-performance-handoff.html'), 'utf8');
+  const html = await readFile(resolve('dist/index.html'), 'utf8');
   validateHtml(html);
   console.log('Standalone HTML validation passed.');
 }

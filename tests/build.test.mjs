@@ -1,12 +1,20 @@
 import assert from 'node:assert/strict';
-import { readFile, rm } from 'node:fs/promises';
+import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { basename, resolve } from 'node:path';
 import test from 'node:test';
 import { buildPage, outputPath } from '../scripts/build.mjs';
 import { validateHtml } from '../scripts/validate-html.mjs';
 
-test('build emits one self-contained HTML file with ten WebP assets', async () => {
+test('build emits index.html as the only canonical standalone artifact', async () => {
+  const legacyOutputPath = resolve('dist/laptop-performance-handoff.html');
   await rm('dist', { recursive: true, force: true });
+  await mkdir('dist', { recursive: true });
+  await writeFile(legacyOutputPath, 'legacy artifact', 'utf8');
+
   await buildPage();
+
+  assert.equal(basename(outputPath), 'index.html');
+  await assert.rejects(access(legacyOutputPath), { code: 'ENOENT' });
   const html = await readFile(outputPath, 'utf8');
   assert.equal((html.match(/data:image\/webp;base64,/g) ?? []).length, 10);
   assert.doesNotMatch(html, /<img[^>]+src=["'](?!data:)/);

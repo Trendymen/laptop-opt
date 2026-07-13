@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-const file = resolve('dist/laptop-performance-handoff.html');
+const file = resolve('dist/index.html');
 const html = await readFile(file);
 const port = Number(process.env.PORT || 4173);
 
