@@ -55,6 +55,7 @@ jobs:
 
       - name: Deploy CloudBase application
         if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/master' }}
+        working-directory: dist
         env:
           TCB_ENV_ID: ${{ secrets.TCB_ENV_ID }}
         run: |
@@ -66,7 +67,7 @@ jobs:
             --framework static \
             --install-command "" \
             --build-command "" \
-            --output-dir ./dist \
+            --output-dir ./ \
             --deploy-path / \
             --force \
             --yes \

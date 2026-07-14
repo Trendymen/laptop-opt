@@ -66,6 +66,7 @@ function assertWorkflowContract(workflowSource) {
   assert.deepEqual(steps[6].env, {
     TCB_ENV_ID: '${{ secrets.TCB_ENV_ID }}',
   });
+  assert.equal(steps[6]['working-directory'], 'dist');
   assert.deepEqual(collectSecretExpressionPaths(workflow).sort(), [
     'jobs.verify-and-deploy.steps.5.env.TCB_SECRET_ID',
     'jobs.verify-and-deploy.steps.5.env.TCB_SECRET_KEY',
@@ -88,13 +89,14 @@ function assertWorkflowContract(workflowSource) {
     '  --framework static \\',
     '  --install-command "" \\',
     '  --build-command "" \\',
-    '  --output-dir ./dist \\',
+    '  --output-dir ./ \\',
     '  --deploy-path / \\',
     '  --force \\',
     '  --yes \\',
     '  --json',
   ].join('\n');
   assert.equal(steps[6].run.trimEnd(), expectedDeployRun);
+  assert.doesNotMatch(steps[6].run, /(?:^|\s)--cwd(?:\s|$)/m);
   const normalizedShellCommands = steps
     .filter((step) => typeof step.run === 'string')
     .map((step) => normalizeShellCommands(step.run))
@@ -220,9 +222,9 @@ test('CloudBase workflow contract rejects a nested deploy path', async () => {
   assert.throws(() => assertWorkflowContract(mutated));
 });
 
-test('CloudBase workflow contract rejects a different output directory', async () => {
+test('CloudBase workflow contract rejects the repository-root output path', async () => {
   const workflow = await readFile(workflowPath, 'utf8');
-  const mutated = workflow.replace('--output-dir ./dist \\\n', '--output-dir ./dist-backup \\\n');
+  const mutated = workflow.replace('--output-dir ./ \\\n', '--output-dir ./dist \\\n');
 
   assert.notEqual(mutated, workflow);
   assert.throws(() => assertWorkflowContract(mutated));
@@ -231,6 +233,25 @@ test('CloudBase workflow contract rejects a different output directory', async (
 test('CloudBase workflow contract rejects a missing line continuation', async () => {
   const workflow = await readFile(workflowPath, 'utf8');
   const mutated = workflow.replace('--framework static \\\n', '--framework static\n');
+
+  assert.notEqual(mutated, workflow);
+  assert.throws(() => assertWorkflowContract(mutated));
+});
+
+test('CloudBase workflow contract rejects deployment from the repository root', async () => {
+  const workflow = await readFile(workflowPath, 'utf8');
+  const mutated = workflow.replace('        working-directory: dist\n', '');
+
+  assert.notEqual(mutated, workflow);
+  assert.throws(() => assertWorkflowContract(mutated));
+});
+
+test('CloudBase workflow contract rejects the ineffective cwd option', async () => {
+  const workflow = await readFile(workflowPath, 'utf8');
+  const mutated = workflow.replace(
+    '            --output-dir ./ \\\n',
+    '            --cwd ./dist \\\n            --output-dir ./ \\\n',
+  );
 
   assert.notEqual(mutated, workflow);
   assert.throws(() => assertWorkflowContract(mutated));
