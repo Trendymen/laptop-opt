@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node --test --test-concurrency=1 tests/assets.test.mjs tests/image-cache.test.mjs tests/image-pipeline.test.mjs tests/build.test.mjs tests/capture-source.test.mjs tests/capture.test.mjs tests/content.test.mjs tests/layout-source.test.mjs tests/interaction-source.test.mjs tests/deploy-cloudbase-app.test.mjs tests/deploy-workflow.test.mjs",
+    "test": "node --test --test-concurrency=1 tests/assets.test.mjs tests/image-cache.test.mjs tests/image-pipeline.test.mjs tests/build.test.mjs tests/capture-source.test.mjs tests/capture.test.mjs tests/content.test.mjs tests/layout-source.test.mjs tests/interaction-source.test.mjs tests/deploy-cloudbase-app.test.mjs tests/verify-deploy-revision.test.mjs tests/deploy-workflow.test.mjs",
     "verify": "npm test && npm run build && node scripts/validate-html.mjs",
     "serve": "node scripts/serve.mjs",
     "capture": "node scripts/capture.mjs",

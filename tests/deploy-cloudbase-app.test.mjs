@@ -31,8 +31,7 @@ const expectedRequest = {
     codeBranch: 'master',
     staticCmd: {
       installCmd: 'npm ci',
-      buildCmd:
-        'test "$(git rev-parse HEAD)" = "$EXPECTED_GITHUB_SHA" && npm run verify',
+      buildCmd: 'node scripts/verify-deploy-revision.mjs',
       deployCmd: 'tcb hosting deploy ./dist /',
     },
     staticEnv: {
@@ -114,8 +113,7 @@ test('Tencent Cloud adapter sends recursively PascalCased requests to the offici
           CodeBranch: 'master',
           StaticCmd: {
             InstallCmd: 'npm ci',
-            BuildCmd:
-              'test "$(git rev-parse HEAD)" = "$EXPECTED_GITHUB_SHA" && npm run verify',
+            BuildCmd: 'node scripts/verify-deploy-revision.mjs',
             DeployCmd: 'tcb hosting deploy ./dist /',
           },
           StaticEnv: {

@@ -70,8 +70,7 @@ export function createDeploymentRequest({ envId, commitSha }) {
       codeBranch: 'master',
       staticCmd: {
         installCmd: 'npm ci',
-        buildCmd:
-          'test "$(git rev-parse HEAD)" = "$EXPECTED_GITHUB_SHA" && npm run verify',
+        buildCmd: 'node scripts/verify-deploy-revision.mjs',
         deployCmd: 'tcb hosting deploy ./dist /',
       },
       staticEnv: {
