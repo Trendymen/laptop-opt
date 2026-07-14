@@ -1,111 +1,103 @@
 # CloudBase 应用级 CI/CD 目标修正设计
 
-## 背景与根因
+## 背景与三次定位结果
 
-当前 GitHub Actions 使用：
+目标云开发环境中已经存在应用 `laptop`，应用路径为 `/`，修复前最新成功版本为 `laptop-006`。CI/CD 必须更新这个应用的版本记录，而不是只改环境中的静态文件。
 
-```bash
-tcb hosting deploy ./dist -e "$TCB_ENV_ID"
+前两版方案分别暴露出目标语义和传输链路问题：
+
+1. `tcb hosting deploy ./dist` 只上传环境级静态文件，不包含应用名，也不会为 `laptop` 生成应用版本。
+2. `tcb app deploy laptop` 能选中正确应用，但 CloudBase CLI 3.6.1 会把进程工作目录压缩为 ZIP，再用一个 COS `PUT` 上传。从仓库根目录执行时输入约百 MB；改为只上传 `dist/` 后，输入虽已收窄，GitHub-hosted runner 仍在约九分钟后收到 COS `UserNetworkTooSlow`，失败发生在创建版本之前。
+
+因此最终方案不能继续依赖 GitHub runner 到腾讯云 COS 的单次 ZIP 上传。
+
+## 目标身份与代码来源
+
+CloudBase 部署有两组不能混淆的标识：
+
+- `envId` 选择腾讯云云开发环境；
+- `serviceName: "laptop"` 选择该环境内的具体应用；
+- `codeSource/codeRepo/codeBranch` 只描述应用版本的代码来源，不替代应用名。
+
+同一环境、同一 `serviceName` 调用 `CreateCloudApp` 会为现有 `laptop` 创建新版本。部署前仍必须查询应用详情并校验名称和根路径，保持 update-only 行为。
+
+## 最终架构
+
+GitHub Actions 仍是唯一 CI/CD 触发入口：
+
+1. checkout 当前 `master` revision；
+2. `npm ci`；
+3. `npm run verify`，在 GitHub 侧完成测试、构建和独立 HTML 校验；
+4. 使用固定版本 `@cloudbase/manager-node@5.6.2` 查询现有 `laptop`；
+5. 通过 `BuildType=GIT` 创建该应用的新版本；
+6. CloudBase 服务端从公开 GitHub 仓库拉取 `master`，重新执行安装、验证、构建和发布；
+7. Actions 按 `CreateCloudApp` 返回的 `BuildId` 轮询，只有新版本状态为 `SUCCESS` 才成功结束。
+
+GitHub 本地验证仍是发布门禁；CloudBase 侧重复构建是为了消除不可靠的跨云 ZIP 上传，不再尝试复用 runner 本地 `dist/`。
+
+## 官方控制台等价请求
+
+CloudBase 控制台 1.24.0 的公开仓库部署会把 GitHub URL 解析为仓库标识，并提交以下 Manager SDK 请求：
+
+```js
+{
+  serviceName: 'laptop',
+  deployType: 'static-hosting',
+  buildType: 'GIT',
+  staticConfig: {
+    framework: 'other',
+    nodeJsVersion: '20',
+    appPath: '/',
+    buildPath: '',
+    codeSource: 'github',
+    codeRepo: 'Trendymen/laptop-opt',
+    codeBranch: 'master',
+    staticCmd: {
+      installCmd: 'npm ci',
+      buildCmd: 'npm run verify',
+      deployCmd: 'tcb hosting deploy ./dist /',
+    },
+  },
+}
 ```
 
-该命令只把文件写入指定云开发环境的静态托管空间，不包含应用名称，也不会形成应用版本记录。
+其中 `codeRepo` 不含协议、域名或 `.git`。控制台创建页把文件上传映射为 `ZIP`、模板映射为 `TEMPLATE`，Git 个人仓库和公开仓库均映射为 `GIT`。
 
-控制台证据显示，目标环境内已有应用 `laptop`，应用路径为 `/`；2026-07-14 的 Actions 部署完成后，该应用的更新时间仍停留在 2026-07-13。CloudBase CLI 3.6.1 的只读查询同时显示其最新版本仍为 `laptop-006`。这说明文件虽然已经上线，但本次 CI 没有更新控制台中的 `laptop` 应用实体。
+控制台只提供 `codeBranch`，没有 commit SHA 字段。为避免两个远端构建交叠，Actions 的生产并发组必须串行排队，不再取消正在运行且可能已经触发 CloudBase 构建的 job。每次脚本只轮询自己创建后返回的 `BuildId`，不能用“最新版本”代替。
 
-CloudBase 官方的应用部署模型使用 `tcb app deploy [serviceName]`：`serviceName` 对应具体应用，部署会生成版本记录并更新应用状态。官方 CLI 帮助也明确区分：`app deploy` 支持版本管理，`hosting deploy` 仅做文件上传。
+## 脚本与 Workflow 边界
 
-首次切换到 `app deploy` 后还暴露出第二个问题：CLI 3.6.1 会把当前工作目录整体压缩上传，只默认忽略 `.git`、`node_modules` 和 `.DS_Store`。如果命令从仓库根目录执行，已经完成本地构建仍会把 `.cache`、`output`、`.superpowers`、源码和 `dist` 一起打包；当前仓库这些非必要内容未压缩前约百 MB，导致 Actions 在创建新应用版本前长时间停留在上传阶段。CLI 3.6.1 还没有把 `--cwd` 解析出的 `projectPath` 传给上传函数，因此仅追加 `--cwd ./dist` 不能收窄压缩范围。应用部署必须让进程本身从 `dist/` 内执行，确保上传输入只有已验证产物。
+新增 Node ESM 部署脚本，职责包括：
 
-## 目标
+- 校验 `TCB_SECRET_ID`、`TCB_SECRET_KEY`、`TCB_ENV_ID` 均存在；
+- `describeAppInfo` 校验 `ServiceName=laptop`、`DeployType=static-hosting`、`AppPath=/`；
+- 用固定 GIT payload 调用 `createApp`；
+- 用返回的 `BuildId` 调用 `describeAppVersion`，处理 `BUILDING`、`SUCCESS`、`FAILED` 和超时；
+- 日志只输出应用名、路径、版本名、BuildId 和状态，不输出环境 ID 或凭据。
 
-- GitHub Actions 显式更新现有应用 `laptop`，不再只更新底层静态文件。
-- 保持目标云开发环境不变，继续由 `TCB_ENV_ID` 选择环境。
-- 保持应用路径 `/` 不变，线上访问地址不迁移。
-- 复用 `npm run verify` 已生成的 `dist/`，并且只上传该目录，避免上传缓存、截图中间产物、源码或在 CloudBase 中重复安装依赖与构建。
-- 保留现有 Secrets 隔离、PR 只验证、`master` 才部署和最小权限策略。
+workflow 删除全局 CLI 安装、`tcb login`、ZIP 上传和 `working-directory: dist`。三个 Secrets 只注入受 `master` guard 保护的最后一个 SDK 部署步骤。PR 仍只执行安装与完整验证。
 
-## 方案选择
+## 测试策略
 
-### 采用：GitHub Actions 显式执行应用部署
+测试分两层，均不访问网络：
 
-部署步骤的工作目录固定为 `dist/`。先用只读命令确认目标应用已经存在，再执行部署：
+1. Node 单元测试冻结 GIT payload、update-only 校验、调用顺序、BuildId 轮询、失败/未知状态/超时和日志脱敏。
+2. YAML 契约测试冻结触发器、权限、分支 guard、串行并发、固定步骤、三个 Secrets 的唯一作用域，并拒绝 CLI 安装、登录、ZIP/COS 上传、删除命令和环境级部署回退。
 
-```bash
-tcb app info laptop --env-id "$TCB_ENV_ID" --json
-
-tcb app deploy laptop \
-  --env-id "$TCB_ENV_ID" \
-  --framework static \
-  --install-command "" \
-  --build-command "" \
-  --output-dir ./ \
-  --deploy-path / \
-  --force \
-  --yes \
-  --json
-```
-
-参数含义：
-
-- `app info laptop`：作为 update-only 前置保护；环境或应用名错误时立即失败，不允许 CI 意外创建第二个应用。
-- `laptop`：显式绑定控制台现有应用，避免从 `package.json` 的 `laptop-performance-handoff` 自动推断出错误名称。
-- `--env-id`：选择现有云开发环境。
-- `--framework static`：声明这是纯静态应用。
-- `working-directory: dist`：让 CLI 的压缩根目录直接落在已验证产物目录，只上传部署所需文件；不使用 `--cwd ./dist`，避免 CLI 同时把该值写入云端 `buildPath`。
-- 空安装和构建命令：跳过 CloudBase 侧重复安装与构建，直接使用 Actions 已验证的产物。
-- `--output-dir ./`：部署当前工作目录中的产物；此时 `index.html` 就在输出目录根部。
-- `--deploy-path /`：继续挂载到当前根路径。
-- `--force --yes`：更新已有应用并禁止 CI 等待交互确认。
-- `--json`：提供适合 Actions 日志和后续自动检查的结构化结果。
-
-### 不采用：继续使用 `tcb hosting deploy`
-
-它只能证明文件已上传，无法证明 `laptop` 应用版本已更新，控制台状态会继续与线上文件不一致。
-
-### 不采用：改由控制台 Git 仓库部署
-
-这会让 CloudBase 控制台与现有 GitHub Actions 同时接管构建和部署，增加重复配置、凭据和触发器冲突；当前只需修正 Actions 的目标语义。
-
-## Workflow 与测试修改
-
-只修改两个生产相关文件：
-
-1. `.github/workflows/deploy-cloudbase.yml`
-   - 部署步骤改名为应用级部署。
-   - 部署步骤使用 `working-directory: dist`，将上传边界收窄到构建产物。
-   - 先确认 `laptop` 已存在，再用上述 `tcb app deploy laptop` 命令替换 `tcb hosting deploy`。
-2. `tests/deploy-workflow.test.mjs`
-   - 契约测试必须要求应用存在性检查、显式应用名 `laptop`、路径 `/`、步骤工作目录 `dist`、输出目录 `./`、非交互参数和应用部署命令。
-   - 契约测试必须拒绝删除 `working-directory`、退回仓库根目录的 `./dist` 输出或改用 `--cwd`。
-   - 契约测试必须拒绝重新出现 `tcb hosting deploy`。
-   - 继续验证 Secrets 只存在于登录与部署步骤、部署 guard、固定 CLI 版本和禁止危险删除。
-
-页面模板、样式、图片、截图和内容测试不在本次范围内。
-
-## 验证与验收
-
-1. 先修改契约测试并确认它因当前仍使用 `tcb hosting deploy` 而失败。
-2. 最小修改 workflow，使聚焦测试转绿。
-3. 执行完整 `npm run verify` 和 `git diff --check`。
-4. 独立 review 检查目标应用、路径、非交互参数、Secrets 范围和 PR guard。
-5. 推送 `master` 并等待 Actions 成功。
-6. 使用只读 `tcb app info laptop --json -e <env>` 确认：
-   - `serviceName` 仍为 `laptop`；
-   - `appPath` 仍为 `/`；
-   - `latestStatus` 为 `SUCCESS`；
-   - `latestVersionName` 不再是修复前的 `laptop-006`。
-7. 请求公网 `index.html`，确认 HTTP 200 且与本地 `dist/index.html` SHA-256 一致。
+真实验收在推送后完成：目标 Actions revision 成功、无 annotations、`laptop` 路径仍为 `/`、状态为 `SUCCESS`、版本不再是 `laptop-006`，线上 `index.html` 与该 revision 的本地产物一致，Actions 日志不含三个 Secret 原值。
 
 ## 风险控制
 
-- 不执行 `hosting delete` 或 `app delete`。
-- 不创建第二个应用；`app info laptop` 必须先成功，再由固定 `serviceName=laptop` 和 `--force` 更新现有应用。
-- 不改变 `TCB_ENV_ID`、根路径 `/` 或公网域名。
-- 不从仓库根目录执行 `app deploy`；部署输入严格限制为 `dist/`，避免无关缓存和中间产物拖慢或污染应用版本。
-- 如果应用部署失败，Actions 会失败并保留当前成功版本；不会在测试失败后继续部署。
+- 不调用 `hosting delete`、`app delete` 或版本删除。
+- 应用查询或名称/路径校验失败时，不调用 `createApp`。
+- `createApp` 不做盲目网络重试，避免一次不确定响应产生多个版本；只有版本状态查询允许继续轮询。
+- 未知构建状态 fail closed。
+- 脚本超时小于 Actions job timeout，为失败收尾留出余量。
+- Manager SDK 只在真实入口动态导入，单元测试使用假 service、假时钟和假 logger，不加载凭据或网络。
 
 ## 参考
 
-- CloudBase 应用部署：<https://docs.cloudbase.net/cli-v1/app/management>
-- CloudBase 静态托管文件管理：<https://docs.cloudbase.net/cli-v1/hosting>
+- CloudBase Manager Node CloudApp API：<https://docs.cloudbase.net/api-reference/manager/node/cloudApp>
+- CloudBase 应用管理：<https://docs.cloudbase.net/cli-v1/app/management>
+- CloudBase Git 仓库部署：<https://docs.cloudbase.net/hosting/quick-start>
 - CloudBase GitHub Actions 集成：<https://docs.cloudbase.net/hosting/cli-devops#github-actions>
