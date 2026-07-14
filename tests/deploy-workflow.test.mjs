@@ -12,8 +12,8 @@ test('CloudBase workflow verifies PRs and only deploys trusted master revisions'
   assert.doesNotMatch(workflow, /pull_request_target/);
   assert.match(workflow, /permissions:\n\s+contents: read/);
   assert.match(workflow, /timeout-minutes: 15/);
-  assert.match(workflow, /uses: actions\/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5/);
-  assert.match(workflow, /uses: actions\/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020/);
+  assert.match(workflow, /uses: actions\/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0/);
+  assert.match(workflow, /uses: actions\/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e/);
   assert.match(workflow, /node-version: '20'/);
   assert.match(workflow, /cache: npm/);
   assert.match(workflow, /run: npm ci/);
