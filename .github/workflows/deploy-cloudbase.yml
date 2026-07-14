@@ -14,12 +14,12 @@ permissions:
 
 concurrency:
   group: cloudbase-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   verify-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       CI: true
     steps:
@@ -38,37 +38,17 @@ jobs:
       - name: Verify and build
         run: npm run verify
 
-      - name: Install CloudBase CLI
-        if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/master' }}
-        run: npm install --global @cloudbase/cli@3.6.1
-
-      - name: Log in to CloudBase
+      - name: Deploy CloudBase application from Git
         if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/master' }}
         env:
           TCB_SECRET_ID: ${{ secrets.TCB_SECRET_ID }}
           TCB_SECRET_KEY: ${{ secrets.TCB_SECRET_KEY }}
+          TCB_ENV_ID: ${{ secrets.TCB_ENV_ID }}
+          DEPLOY_COMMIT_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
           : "${TCB_SECRET_ID:?TCB_SECRET_ID is not configured}"
           : "${TCB_SECRET_KEY:?TCB_SECRET_KEY is not configured}"
-          tcb login --apiKeyId "$TCB_SECRET_ID" --apiKey "$TCB_SECRET_KEY"
-
-      - name: Deploy CloudBase application
-        if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/master' }}
-        working-directory: dist
-        env:
-          TCB_ENV_ID: ${{ secrets.TCB_ENV_ID }}
-        run: |
-          set -euo pipefail
           : "${TCB_ENV_ID:?TCB_ENV_ID is not configured}"
-          tcb app info laptop --env-id "$TCB_ENV_ID" --json
-          tcb app deploy laptop \
-            --env-id "$TCB_ENV_ID" \
-            --framework static \
-            --install-command "" \
-            --build-command "" \
-            --output-dir ./ \
-            --deploy-path / \
-            --force \
-            --yes \
-            --json
+          : "${DEPLOY_COMMIT_SHA:?DEPLOY_COMMIT_SHA is not configured}"
+          node scripts/deploy-cloudbase-app.mjs

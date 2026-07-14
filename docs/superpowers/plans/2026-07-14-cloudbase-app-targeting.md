@@ -4,16 +4,16 @@
 
 **Goal:** 由 GitHub Actions 更新现有 CloudBase 应用 `laptop`，通过 CloudBase 服务端拉取公开 Git 仓库来绕开失败的 runner-to-COS ZIP 上传，并以新版本 `SUCCESS` 作为部署完成条件。
 
-**Architecture:** GitHub Actions 先运行 `npm run verify`，随后由 Node ESM 脚本使用 `@cloudbase/manager-node@5.6.2` 执行 `describeAppInfo → createApp(BuildType=GIT) → describeAppVersion(BuildId)`。CloudBase 服务端从 `Trendymen/laptop-opt@master` 重新安装、验证、构建并发布到 `/`。
+**Architecture:** GitHub Actions 先运行 `npm run verify`，随后由 Node ESM 脚本使用腾讯云官方 TCB SDK 执行 `DescribeCloudAppInfo → CreateCloudApp(BuildType=GIT) → DescribeCloudAppVersion(BuildId)`。CloudBase 服务端从 `Trendymen/laptop-opt@master` 重新安装、验证、构建并发布到 `/`。
 
-**Tech Stack:** GitHub Actions、Node.js 20 ESM、`@cloudbase/manager-node` 5.6.2、`node:test`、YAML。
+**Tech Stack:** GitHub Actions、Node.js 20 ESM、`tencentcloud-sdk-nodejs-tcb` 4.1.266、`node:test`、YAML。
 
 ## Global Constraints
 
 - 目标环境只来自 `TCB_ENV_ID`，目标应用固定为 `laptop`，应用路径固定为 `/`。
 - 部署前必须确认现有应用的名称、类型和路径；校验失败时禁止创建版本。
 - GIT 来源固定为 `github / Trendymen/laptop-opt / master`。
-- CloudBase 构建命令固定为 `npm ci`、`npm run verify`、`tcb hosting deploy ./dist /`。
+- CloudBase 构建命令固定为 `npm ci`、当前 Git SHA 校验后执行 `npm run verify`、`tcb hosting deploy ./dist /`。
 - 不再调用 CLI `app deploy`、ZIP/COS 上传或 `tcb login`。
 - 三个 Secrets 只允许进入最后一个受信任 `master` 部署步骤。
 - PR 只验证；生产 push 串行排队，不能取消已经可能触发远端构建的 job。
@@ -44,8 +44,8 @@
 - Modify: `package.json`
 - Modify: `package-lock.json`
 
-- [ ] 安装并精确锁定 `@cloudbase/manager-node@5.6.2`。
-- [ ] 实现纯函数 payload、目标校验和 BuildId 轮询；真实入口动态导入 SDK，初始化只发生一次。
+- [ ] 安装并精确锁定 `tencentcloud-sdk-nodejs-tcb@4.1.266`，把 common 依赖固定为 `4.1.220`，使用 `uuid@11.1.1` override 保持生产依赖审计为 0。
+- [ ] 实现纯函数 payload、递归 API 字段转换、目标校验和 BuildId 轮询；真实入口动态导入 SDK，初始化只发生一次。
 - [ ] 日志仅输出脱敏 JSON 摘要；`createApp` 不做盲目重试，查询失败直接终止。
 - [ ] workflow 删除 CLI 安装与登录，最后一步执行 `node scripts/deploy-cloudbase-app.mjs`；三个 Secrets 只在该步骤 env 中。
 - [ ] 把 `cancel-in-progress` 改为 `false`，job timeout 大于脚本超时。

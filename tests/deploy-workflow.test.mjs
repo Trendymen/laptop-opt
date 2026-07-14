@@ -10,9 +10,7 @@ const expectedStepNames = [
   'Set up Node.js',
   'Install dependencies',
   'Verify and build',
-  'Install CloudBase CLI',
-  'Log in to CloudBase',
-  'Deploy CloudBase application',
+  'Deploy CloudBase application from Git',
 ];
 
 function collectSecretExpressionPaths(value, path = [], paths = []) {
@@ -38,10 +36,6 @@ function collectSecretExpressionPaths(value, path = [], paths = []) {
   return paths;
 }
 
-function normalizeShellCommands(shellSource) {
-  return shellSource.replace(/\\\r?\n[ \t]*/g, ' ').replace(/[ \t]+/g, ' ');
-}
-
 function assertWorkflowContract(workflowSource) {
   const workflow = parse(workflowSource);
   const job = workflow.jobs['verify-and-deploy'];
@@ -53,24 +47,27 @@ function assertWorkflowContract(workflowSource) {
   assert.deepEqual(workflow.on.pull_request, { branches: ['master'] });
   assert.equal(workflow.on.workflow_dispatch, null);
   assert.deepEqual(workflow.permissions, { contents: 'read' });
+  assert.deepEqual(workflow.concurrency, {
+    group: 'cloudbase-${{ github.workflow }}-${{ github.ref }}',
+    'cancel-in-progress': false,
+  });
   assert.deepEqual(Object.keys(workflow.jobs), ['verify-and-deploy']);
-  assert.equal(job['timeout-minutes'], 15);
+  assert.equal(job['timeout-minutes'], 20);
   assert.deepEqual(job.env, { CI: true });
   assert.deepEqual(steps.map((step) => step.name), expectedStepNames);
   assert.deepEqual(steps.slice(0, 4).map((step) => step.if), [undefined, undefined, undefined, undefined]);
-  assert.deepEqual(steps.slice(4).map((step) => step.if), [deployGuard, deployGuard, deployGuard]);
-  assert.deepEqual(steps[5].env, {
+  assert.equal(steps[4].if, deployGuard);
+  assert.deepEqual(steps[4].env, {
     TCB_SECRET_ID: '${{ secrets.TCB_SECRET_ID }}',
     TCB_SECRET_KEY: '${{ secrets.TCB_SECRET_KEY }}',
-  });
-  assert.deepEqual(steps[6].env, {
     TCB_ENV_ID: '${{ secrets.TCB_ENV_ID }}',
+    DEPLOY_COMMIT_SHA: '${{ github.sha }}',
   });
-  assert.equal(steps[6]['working-directory'], 'dist');
+  assert.equal(steps[4]['working-directory'], undefined);
   assert.deepEqual(collectSecretExpressionPaths(workflow).sort(), [
-    'jobs.verify-and-deploy.steps.5.env.TCB_SECRET_ID',
-    'jobs.verify-and-deploy.steps.5.env.TCB_SECRET_KEY',
-    'jobs.verify-and-deploy.steps.6.env.TCB_ENV_ID',
+    'jobs.verify-and-deploy.steps.4.env.TCB_ENV_ID',
+    'jobs.verify-and-deploy.steps.4.env.TCB_SECRET_ID',
+    'jobs.verify-and-deploy.steps.4.env.TCB_SECRET_KEY',
   ]);
 
   assert.equal(steps[0].uses, 'actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0');
@@ -78,40 +75,24 @@ function assertWorkflowContract(workflowSource) {
   assert.deepEqual(steps[1].with, { 'node-version': '20', cache: 'npm' });
   assert.equal(steps[2].run, 'npm ci');
   assert.equal(steps[3].run, 'npm run verify');
-  assert.equal(steps[4].run, 'npm install --global @cloudbase/cli@3.6.1');
-  assert.match(steps[5].run, /tcb login --apiKeyId "\$TCB_SECRET_ID" --apiKey "\$TCB_SECRET_KEY"/);
   const expectedDeployRun = [
     'set -euo pipefail',
+    ': "${TCB_SECRET_ID:?TCB_SECRET_ID is not configured}"',
+    ': "${TCB_SECRET_KEY:?TCB_SECRET_KEY is not configured}"',
     ': "${TCB_ENV_ID:?TCB_ENV_ID is not configured}"',
-    'tcb app info laptop --env-id "$TCB_ENV_ID" --json',
-    'tcb app deploy laptop \\',
-    '  --env-id "$TCB_ENV_ID" \\',
-    '  --framework static \\',
-    '  --install-command "" \\',
-    '  --build-command "" \\',
-    '  --output-dir ./ \\',
-    '  --deploy-path / \\',
-    '  --force \\',
-    '  --yes \\',
-    '  --json',
+    ': "${DEPLOY_COMMIT_SHA:?DEPLOY_COMMIT_SHA is not configured}"',
+    'node scripts/deploy-cloudbase-app.mjs',
   ].join('\n');
-  assert.equal(steps[6].run.trimEnd(), expectedDeployRun);
-  assert.doesNotMatch(steps[6].run, /(?:^|\s)--cwd(?:\s|$)/m);
-  const normalizedShellCommands = steps
-    .filter((step) => typeof step.run === 'string')
-    .map((step) => normalizeShellCommands(step.run))
-    .join('\n');
-  assert.doesNotMatch(
-    normalizedShellCommands,
-    /(?:^|[\n;&|()]) *tcb (?:hosting (?:deploy|delete)|app delete)(?=$|[ \n;&|()])/m,
-  );
+  assert.equal(steps[4].run.trimEnd(), expectedDeployRun);
+
   assert.doesNotMatch(
     workflowSource,
-    /pull_request_target|\.\/dist \/home|\/Users\/|AKID/,
+    /@cloudbase\/cli|\btcb\s+(?:login|app\s+deploy|hosting\s+deploy)|uploadCode|cosTimestamp|zipFileUrl|pull_request_target|\/Users\/|AKID/,
   );
+  assert.doesNotMatch(workflowSource, /\btcb\s+(?:hosting|app)\s+delete\b/);
 }
 
-test('CloudBase workflow verifies PRs and only deploys trusted master revisions', async () => {
+test('CloudBase workflow verifies PRs and deploys trusted master revisions through the GIT API', async () => {
   const workflow = await readFile(workflowPath, 'utf8');
   assertWorkflowContract(workflow);
 });
@@ -129,15 +110,10 @@ test('CloudBase workflow contract rejects additional trigger events', async () =
 
 test('CloudBase workflow contract rejects job-level deployment secrets', async () => {
   const workflow = await readFile(workflowPath, 'utf8');
-  const mutated = workflow
-    .replace(
-      '    env:\n      CI: true\n',
-      '    env:\n      CI: true\n      TCB_SECRET_ID: ${{ secrets.TCB_SECRET_ID }}\n      TCB_SECRET_KEY: ${{ secrets.TCB_SECRET_KEY }}\n',
-    )
-    .replace(
-      '        env:\n          TCB_SECRET_ID: ${{ secrets.TCB_SECRET_ID }}\n          TCB_SECRET_KEY: ${{ secrets.TCB_SECRET_KEY }}\n',
-      '',
-    );
+  const mutated = workflow.replace(
+    '    env:\n      CI: true\n',
+    '    env:\n      CI: true\n      TCB_SECRET_ID: ${{ secrets.TCB_SECRET_ID }}\n',
+  );
 
   assert.notEqual(mutated, workflow);
   assert.throws(() => assertWorkflowContract(mutated));
@@ -161,98 +137,63 @@ for (const { label, expression } of [
   });
 }
 
-for (const { label, command } of [
-  { label: 'multi-whitespace legacy hosting deploy', command: 'tcb  hosting\tdeploy ./dist' },
-  {
-    label: 'line-continuation hosting delete',
-    command: 'tcb \\\nhosting \\\ndelete --env-id "$TCB_ENV_ID"',
-  },
-  {
-    label: 'line-continuation app delete',
-    command: 'tcb \\\napp \\\ndelete laptop --env-id "$TCB_ENV_ID"',
-  },
+test('CloudBase workflow contract rejects cancellation after a remote build may have started', async () => {
+  const workflow = await readFile(workflowPath, 'utf8');
+  const mutated = workflow.replace('  cancel-in-progress: false\n', '  cancel-in-progress: true\n');
+
+  assert.notEqual(mutated, workflow);
+  assert.throws(() => assertWorkflowContract(mutated));
+});
+
+test('CloudBase workflow contract rejects an unguarded deploy step', async () => {
+  const workflow = await readFile(workflowPath, 'utf8');
+  const mutated = workflow.replace(
+    `      - name: Deploy CloudBase application from Git\n        if: ${deployGuard}\n`,
+    '      - name: Deploy CloudBase application from Git\n',
+  );
+
+  assert.notEqual(mutated, workflow);
+  assert.throws(() => assertWorkflowContract(mutated));
+});
+
+test('CloudBase workflow contract rejects a different deployment script', async () => {
+  const workflow = await readFile(workflowPath, 'utf8');
+  const mutated = workflow.replace(
+    'node scripts/deploy-cloudbase-app.mjs',
+    'node scripts/deploy-something-else.mjs',
+  );
+
+  assert.notEqual(mutated, workflow);
+  assert.throws(() => assertWorkflowContract(mutated));
+});
+
+test('CloudBase workflow contract rejects a missing commit revision guard', async () => {
+  const workflow = await readFile(workflowPath, 'utf8');
+  const mutated = workflow.replace(
+    '          DEPLOY_COMMIT_SHA: ${{ github.sha }}\n',
+    '',
+  );
+
+  assert.notEqual(mutated, workflow);
+  assert.throws(() => assertWorkflowContract(mutated));
+});
+
+for (const command of [
+  'npm install --global @cloudbase/cli@3.6.1',
+  'tcb login --apiKeyId "$TCB_SECRET_ID" --apiKey "$TCB_SECRET_KEY"',
+  'tcb app deploy laptop',
+  'tcb hosting deploy ./dist /',
+  'tcb app delete laptop',
 ]) {
-  test(`CloudBase workflow contract rejects ${label}`, async () => {
+  test(`CloudBase workflow contract rejects legacy or destructive command: ${command}`, async () => {
     const workflow = await readFile(workflowPath, 'utf8');
-    const loginCommand = '          tcb login --apiKeyId "$TCB_SECRET_ID" --apiKey "$TCB_SECRET_KEY"\n';
-    const indentedCommand = command
-      .split('\n')
-      .map((line) => `          ${line}`)
-      .join('\n');
-    const mutated = workflow.replace(loginCommand, `${loginCommand}${indentedCommand}\n`);
+    const mutated = workflow.replace(
+      '          node scripts/deploy-cloudbase-app.mjs\n',
+      `          ${command}\n          node scripts/deploy-cloudbase-app.mjs\n`,
+    );
 
     assert.notEqual(mutated, workflow);
     assert.doesNotThrow(() => parse(mutated));
     assert.throws(() => assertWorkflowContract(mutated));
   });
 }
-
-test('CloudBase workflow contract rejects an unguarded deploy step', async () => {
-  const workflow = await readFile(workflowPath, 'utf8');
-  const mutated = workflow.replace(
-    `      - name: Deploy CloudBase application\n        if: ${deployGuard}\n`,
-    '      - name: Deploy CloudBase application\n',
-  );
-
-  assert.notEqual(mutated, workflow);
-  assert.throws(() => assertWorkflowContract(mutated));
-});
-
-test('CloudBase workflow contract rejects deployment without the existing-app check', async () => {
-  const workflow = await readFile(workflowPath, 'utf8');
-  const mutated = workflow.replace('tcb app info laptop --env-id "$TCB_ENV_ID" --json\n', '');
-
-  assert.notEqual(mutated, workflow);
-  assert.throws(() => assertWorkflowContract(mutated));
-});
-
-test('CloudBase workflow contract rejects an inferred application name', async () => {
-  const workflow = await readFile(workflowPath, 'utf8');
-  const mutated = workflow.replace('tcb app deploy laptop \\\n', 'tcb app deploy \\\n');
-
-  assert.notEqual(mutated, workflow);
-  assert.throws(() => assertWorkflowContract(mutated));
-});
-
-test('CloudBase workflow contract rejects a nested deploy path', async () => {
-  const workflow = await readFile(workflowPath, 'utf8');
-  const mutated = workflow.replace('--deploy-path / \\\n', '--deploy-path /laptop \\\n');
-
-  assert.notEqual(mutated, workflow);
-  assert.throws(() => assertWorkflowContract(mutated));
-});
-
-test('CloudBase workflow contract rejects the repository-root output path', async () => {
-  const workflow = await readFile(workflowPath, 'utf8');
-  const mutated = workflow.replace('--output-dir ./ \\\n', '--output-dir ./dist \\\n');
-
-  assert.notEqual(mutated, workflow);
-  assert.throws(() => assertWorkflowContract(mutated));
-});
-
-test('CloudBase workflow contract rejects a missing line continuation', async () => {
-  const workflow = await readFile(workflowPath, 'utf8');
-  const mutated = workflow.replace('--framework static \\\n', '--framework static\n');
-
-  assert.notEqual(mutated, workflow);
-  assert.throws(() => assertWorkflowContract(mutated));
-});
-
-test('CloudBase workflow contract rejects deployment from the repository root', async () => {
-  const workflow = await readFile(workflowPath, 'utf8');
-  const mutated = workflow.replace('        working-directory: dist\n', '');
-
-  assert.notEqual(mutated, workflow);
-  assert.throws(() => assertWorkflowContract(mutated));
-});
-
-test('CloudBase workflow contract rejects the ineffective cwd option', async () => {
-  const workflow = await readFile(workflowPath, 'utf8');
-  const mutated = workflow.replace(
-    '            --output-dir ./ \\\n',
-    '            --cwd ./dist \\\n            --output-dir ./ \\\n',
-  );
-
-  assert.notEqual(mutated, workflow);
-  assert.throws(() => assertWorkflowContract(mutated));
-});
