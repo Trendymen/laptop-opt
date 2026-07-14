@@ -6,7 +6,7 @@
 
 **Architecture:** 一个 workflow job 先执行现有 `npm run verify`。部署步骤由事件和分支条件保护，Secrets 仅注入登录与部署 step；PR 永远只执行不带凭据的 CI。
 
-**Tech Stack:** GitHub Actions、Node.js 20、Node `node:test`、CloudBase CLI 3.6.1、GitHub CLI。
+**Tech Stack:** GitHub Actions、Node.js 20、Node `node:test`、`yaml` 2.9.0、CloudBase CLI 3.6.1、GitHub CLI。
 
 ## Global Constraints
 
@@ -27,7 +27,7 @@
 **Files:**
 - Create: `tests/deploy-workflow.test.mjs`
 - Create: `.github/workflows/deploy-cloudbase.yml`
-- Modify: `package.json`
+- Modify: `package.json`、`package-lock.json`
 
 **Interfaces:**
 - Consumes: `npm run verify` 与其生成的 `dist/index.html`。
@@ -166,6 +166,18 @@
   git diff --cached --check
   git commit -m "ci: deploy master to CloudBase"
   ```
+
+#### Task 1 review hardening
+
+最终契约测试额外固定 `yaml@2.9.0` 作为 dev dependency，并使用 YAML 1.2 结构化解析替代单纯的字符串计数。测试要求：
+
+- 顶层事件集合恰好为 `push`、`pull_request`、`workflow_dispatch`，两个分支过滤器均只含 `master`；
+- 只有一个 `verify-and-deploy` job，job 级环境恰好只有 `CI`；
+- 七个 step 的名称与顺序固定，后三个 CD step 各自携带完整的可信 `master` 条件；
+- 三项 Secret 表达式的对象路径精确绑定到登录或部署 step 的 `env`；
+- 变异测试会拒绝额外 `schedule`、把凭据上移到 job 环境、以及用 guard 计数诱饵掩盖无条件部署。
+
+Focused test 最终预期为 4/4 通过。
 
 ### Task 2: 配置 Secrets、推送并验证首次自动部署
 
