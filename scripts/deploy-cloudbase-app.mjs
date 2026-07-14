@@ -70,7 +70,7 @@ export function createDeploymentRequest({ envId, commitSha }) {
       codeBranch: 'master',
       staticCmd: {
         installCmd: 'npm ci',
-        buildCmd: 'node scripts/verify-deploy-revision.mjs',
+        buildCmd: 'npm run verify:deploy',
         deployCmd: 'tcb hosting deploy ./dist /',
       },
       staticEnv: {

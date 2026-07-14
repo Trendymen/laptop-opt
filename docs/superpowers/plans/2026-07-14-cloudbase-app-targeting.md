@@ -13,7 +13,7 @@
 - 目标环境只来自 `TCB_ENV_ID`，目标应用固定为 `laptop`，应用路径固定为 `/`。
 - 部署前必须确认现有应用的名称、类型和路径；校验失败时禁止创建版本。
 - GIT 来源固定为 `github / Trendymen/laptop-opt / master`。
-- CloudBase 构建命令固定为 `npm ci`、`node scripts/verify-deploy-revision.mjs`、`tcb hosting deploy ./dist /`；revision 脚本校验当前 Git SHA 后无 shell 拼接地执行 `npm run verify`。
+- CloudBase 构建命令固定为 `npm ci`、`npm run verify:deploy`、`tcb hosting deploy ./dist /`；npm script 调用 revision 脚本，校验当前 Git SHA 后无 shell 拼接地执行 `npm run verify`。平台自定义构建命令白名单不接受直接以 `node` 开头。
 - 不再调用 CLI `app deploy`、ZIP/COS 上传或 `tcb login`。
 - 三个 Secrets 只允许进入最后一个受信任 `master` 部署步骤。
 - PR 只验证；生产 push 串行排队，不能取消已经可能触发远端构建的 job。

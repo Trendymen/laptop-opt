@@ -31,7 +31,7 @@ const expectedRequest = {
     codeBranch: 'master',
     staticCmd: {
       installCmd: 'npm ci',
-      buildCmd: 'node scripts/verify-deploy-revision.mjs',
+      buildCmd: 'npm run verify:deploy',
       deployCmd: 'tcb hosting deploy ./dist /',
     },
     staticEnv: {
@@ -55,6 +55,7 @@ test('deployment uses the narrow pinned Tencent Cloud SDK with the audited uuid 
   assert.equal(packageJson.dependencies['@cloudbase/manager-node'], undefined);
   assert.equal(packageJson.overrides['tencentcloud-sdk-nodejs-common'], '4.1.220');
   assert.equal(packageJson.overrides.uuid, '11.1.1');
+  assert.equal(packageJson.scripts['verify:deploy'], 'node scripts/verify-deploy-revision.mjs');
 });
 
 test('GIT deployment request exactly targets the existing laptop application', () => {
@@ -113,7 +114,7 @@ test('Tencent Cloud adapter sends recursively PascalCased requests to the offici
           CodeBranch: 'master',
           StaticCmd: {
             InstallCmd: 'npm ci',
-            BuildCmd: 'node scripts/verify-deploy-revision.mjs',
+            BuildCmd: 'npm run verify:deploy',
             DeployCmd: 'tcb hosting deploy ./dist /',
           },
           StaticEnv: {
