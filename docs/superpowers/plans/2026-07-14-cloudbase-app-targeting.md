@@ -4,7 +4,7 @@
 
 **Goal:** 由 GitHub Actions 更新现有 CloudBase 应用 `laptop`，通过 CloudBase 服务端拉取公开 Git 仓库来绕开失败的 runner-to-COS ZIP 上传，并以新版本 `SUCCESS` 作为部署完成条件。
 
-**Architecture:** GitHub Actions 先运行 `npm run verify`，随后由 Node ESM 脚本使用腾讯云官方 TCB SDK 执行 `DescribeCloudAppInfo → CreateCloudApp(BuildType=GIT) → DescribeCloudAppVersion(BuildId)`。CloudBase 服务端从 `Trendymen/laptop-opt@master` 重新安装、验证、构建并发布到 `/`。
+**Architecture:** GitHub Actions 运行 `npm test` 作为源码门禁；随后由 Node ESM 脚本使用腾讯云官方 TCB SDK 执行 `DescribeCloudAppInfo → CreateCloudApp(BuildType=GIT) → DescribeCloudAppVersion(BuildId)`。CloudBase 服务端从 `Trendymen/laptop-opt@master` 拉取摘要绑定的源码，执行唯一一次正式构建与独立 HTML 校验，再把临时生成且不受 Git 跟踪的 `dist/` 发布到 `/`。
 
 **Tech Stack:** GitHub Actions、Node.js 20 ESM、`tencentcloud-sdk-nodejs-tcb` 4.1.266、`node:test`、YAML。
 
@@ -13,10 +13,11 @@
 - 目标环境只来自 `TCB_ENV_ID`，目标应用固定为 `laptop`，应用路径固定为 `/`。
 - 部署前必须确认现有应用的名称、类型和路径；校验失败时禁止创建版本。
 - GIT 来源固定为 `github / Trendymen/laptop-opt / master`。
-- CloudBase 构建命令固定为 `npm ci`、`npm run verify:deploy`、`tcb hosting deploy ./dist /`；npm script 调用 revision 脚本，校验当前 Git SHA 后无 shell 拼接地执行 `npm run verify`。平台自定义构建命令白名单不接受直接以 `node` 开头。
+- CloudBase 安装命令固定为 `npm ci`，构建命令固定为 `npm run verify:deploy`，发布命令固定为 `tcb hosting deploy ./dist /`；Actions 对 HEAD 精确匹配且干净的 checkout 计算摘要，npm script 在 CloudBase 实际工作区构建前后重算并严格比对，中间只执行一次 `npm run build` 和独立 HTML 校验。平台构建目录不保留 `.git`，自定义构建命令白名单也不接受直接以 `node` 开头。
+- `dist/` 必须被 `.gitignore` 排除且不得受 Git 跟踪；Actions 不生成正式产物，CloudBase 生成后直接发布。
 - 不再调用 CLI `app deploy`、ZIP/COS 上传或 `tcb login`。
 - 三个 Secrets 只允许进入最后一个受信任 `master` 部署步骤。
-- PR 只验证；生产 push 串行排队，不能取消已经可能触发远端构建的 job。
+- PR 只测试；生产 push 串行排队，不能取消已经可能触发远端构建的 job。
 - 不执行任何应用、版本或静态文件删除命令。
 - 不修改页面模板、样式、图片、截图或内容。
 
@@ -62,7 +63,7 @@
 
 - [ ] 仅跟踪最终 HEAD 对应的 GitHub Actions run，等待 job 完成。
 - [ ] 确认 run conclusion 为 `success`，check annotations 为 `[]`。
-- [ ] 只读查询 `laptop`：`ServiceName=laptop`、`AppPath=/`、`LatestStatus=SUCCESS`，版本不再是 `laptop-006`。
+- [ ] 只读查询 `laptop`：`ServiceName=laptop`、`AppPath=/`、`LatestStatus=SUCCESS`，版本不再是 `laptop-010`，且等于本次 `CreateCloudApp` 返回的版本。
 - [ ] 请求线上 `/index.html?ci=<HEAD>`，与本地 `dist/index.html` 比较 SHA-256。
 - [ ] 扫描 Actions 日志，确认三个 Secret 原值均未出现。
 - [ ] `git fetch` 后确认本地与 `origin/master` 同步且工作区 clean。

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { parse } from 'yaml';
@@ -9,7 +10,7 @@ const expectedStepNames = [
   'Checkout repository',
   'Set up Node.js',
   'Install dependencies',
-  'Verify and build',
+  'Test source',
   'Deploy CloudBase application from Git',
 ];
 
@@ -74,7 +75,7 @@ function assertWorkflowContract(workflowSource) {
   assert.equal(steps[1].uses, 'actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e');
   assert.deepEqual(steps[1].with, { 'node-version': '20', cache: 'npm' });
   assert.equal(steps[2].run, 'npm ci');
-  assert.equal(steps[3].run, 'npm run verify');
+  assert.equal(steps[3].run, 'npm test');
   const expectedDeployRun = [
     'set -euo pipefail',
     ': "${TCB_SECRET_ID:?TCB_SECRET_ID is not configured}"',
@@ -95,6 +96,13 @@ function assertWorkflowContract(workflowSource) {
 test('CloudBase workflow verifies PRs and deploys trusted master revisions through the GIT API', async () => {
   const workflow = await readFile(workflowPath, 'utf8');
   assertWorkflowContract(workflow);
+});
+
+test('production artifact stays generated and untracked', async () => {
+  const gitignore = await readFile('.gitignore', 'utf8');
+  const patterns = gitignore.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  assert.ok(patterns.includes('dist/'));
+  assert.equal(execFileSync('git', ['ls-files', '--', 'dist'], { encoding: 'utf8' }), '');
 });
 
 test('CloudBase workflow contract rejects additional trigger events', async () => {

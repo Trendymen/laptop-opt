@@ -1,6 +1,8 @@
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import { computeTrackedSourceDigest } from './source-digest.mjs';
+
 const TARGET = Object.freeze({
   serviceName: 'laptop',
   deployType: 'static-hosting',
@@ -47,12 +49,16 @@ export function createTencentCloudService(client) {
   };
 }
 
-export function createDeploymentRequest({ envId, commitSha }) {
+export function createDeploymentRequest({ envId, commitSha, sourceDigest }) {
   if (!String(envId ?? '').trim()) {
     throw new Error('TCB_ENV_ID is not configured');
   }
   if (!/^[0-9a-f]{40}$/i.test(String(commitSha ?? '').trim())) {
     throw new Error('DEPLOY_COMMIT_SHA must be a 40-character Git commit SHA');
+  }
+  const normalizedSourceDigest = String(sourceDigest ?? '').trim().toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(normalizedSourceDigest)) {
+    throw new Error('source digest must be a 64-character SHA-256');
   }
 
   return {
@@ -74,7 +80,10 @@ export function createDeploymentRequest({ envId, commitSha }) {
         deployCmd: 'tcb hosting deploy ./dist /',
       },
       staticEnv: {
-        variables: [{ key: 'EXPECTED_GITHUB_SHA', value: commitSha }],
+        variables: [
+          { key: 'EXPECTED_GITHUB_SHA', value: commitSha },
+          { key: 'EXPECTED_SOURCE_SHA256', value: normalizedSourceDigest },
+        ],
       },
     },
   };
@@ -159,6 +168,7 @@ export async function deployCloudBaseApp({
   service,
   envId,
   commitSha,
+  sourceDigest,
   logger = () => {},
   timeoutMs,
   pollIntervalMs,
@@ -173,7 +183,9 @@ export async function deployCloudBaseApp({
   const target = assertExistingTarget(targetInfo);
   logger({ event: 'target-verified', ...target });
 
-  const creation = await service.createApp(createDeploymentRequest({ envId, commitSha }));
+  const creation = await service.createApp(
+    createDeploymentRequest({ envId, commitSha, sourceDigest }),
+  );
   const buildId = String(creation?.BuildId ?? '').trim();
   if (!buildId) {
     throw new Error('CreateCloudApp did not return a BuildId');
@@ -267,6 +279,7 @@ async function createOfficialTcbService({ secretId, secretKey }) {
 export async function runFromEnvironment({
   env = process.env,
   createService = createOfficialTcbService,
+  readTrackedSourceDigest = computeTrackedSourceDigest,
   logger = (entry) => console.log(JSON.stringify(entry)),
   timeoutMs,
   pollIntervalMs,
@@ -274,12 +287,14 @@ export async function runFromEnvironment({
   sleep,
 } = {}) {
   const { secretId, secretKey, envId, commitSha } = readDeploymentEnvironment(env);
+  const sourceDigest = await readTrackedSourceDigest({ expectedCommitSha: commitSha });
   const service = await createService({ secretId, secretKey, envId });
 
   return deployCloudBaseApp({
     service,
     envId,
     commitSha,
+    sourceDigest,
     logger,
     timeoutMs,
     pollIntervalMs,

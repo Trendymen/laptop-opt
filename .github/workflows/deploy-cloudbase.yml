@@ -35,8 +35,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify and build
-        run: npm run verify
+      - name: Test source
+        run: npm test
 
       - name: Deploy CloudBase application from Git
         if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/master' }}

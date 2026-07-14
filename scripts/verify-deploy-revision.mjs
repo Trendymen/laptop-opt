@@ -1,6 +1,8 @@
-import { execFileSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+
+import { computeWorkspaceSourceDigest } from './source-digest.mjs';
 
 function normalizeCommitSha(value, label) {
   const commitSha = String(value ?? '').trim().toLowerCase();
@@ -10,27 +12,28 @@ function normalizeCommitSha(value, label) {
   return commitSha;
 }
 
-export function verifyDeployRevision(expectedSha, actualSha) {
-  const expected = normalizeCommitSha(expectedSha, 'EXPECTED_GITHUB_SHA');
-  const actual = normalizeCommitSha(actualSha, 'cloned Git HEAD');
+function normalizeSourceDigest(value, label) {
+  const sourceDigest = String(value ?? '').trim().toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(sourceDigest)) {
+    throw new Error(`${label} must be a 64-character SHA-256`);
+  }
+  return sourceDigest;
+}
+
+export function verifyDeploySource(expectedSha, expectedDigest, actualDigest) {
+  const commitSha = normalizeCommitSha(expectedSha, 'EXPECTED_GITHUB_SHA');
+  const expected = normalizeSourceDigest(expectedDigest, 'EXPECTED_SOURCE_SHA256');
+  const actual = normalizeSourceDigest(actualDigest, 'CloudBase source digest');
 
   if (actual !== expected) {
-    throw new Error(`CloudBase revision mismatch: expected ${expected}, received ${actual}`);
+    throw new Error(`CloudBase source digest mismatch: expected ${expected}, received ${actual}`);
   }
 
-  return actual;
+  return { commitSha, sourceDigest: actual };
 }
 
-function readCurrentGitSha() {
-  return execFileSync('git', ['rev-parse', 'HEAD'], {
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'inherit'],
-  }).trim();
-}
-
-function runProjectVerification() {
-  const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-  const result = spawnSync(npmCommand, ['run', 'verify'], {
+function runCommand(command, args) {
+  const result = spawnSync(command, args, {
     env: process.env,
     shell: false,
     stdio: 'inherit',
@@ -43,27 +46,60 @@ function runProjectVerification() {
   return result.status ?? 1;
 }
 
+function runProductionBuild() {
+  const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  const buildExitCode = runCommand(npmCommand, ['run', 'build']);
+  if (buildExitCode !== 0) {
+    return buildExitCode;
+  }
+
+  return runCommand(process.execPath, ['scripts/validate-html.mjs']);
+}
+
 export async function runDeployRevisionVerification({
   env = process.env,
-  readGitSha = readCurrentGitSha,
-  runVerify = runProjectVerification,
+  readSourceDigest = computeWorkspaceSourceDigest,
+  runBuild = runProductionBuild,
   logger = (entry) => console.log(JSON.stringify(entry)),
 } = {}) {
   const expectedSha = normalizeCommitSha(
     env.EXPECTED_GITHUB_SHA,
     'EXPECTED_GITHUB_SHA',
   );
-  const actualSha = await readGitSha();
-  const commitSha = verifyDeployRevision(expectedSha, actualSha);
+  const expectedDigest = normalizeSourceDigest(
+    env.EXPECTED_SOURCE_SHA256,
+    'EXPECTED_SOURCE_SHA256',
+  );
+  const beforeBuildDigest = await readSourceDigest();
+  const { commitSha, sourceDigest } = verifyDeploySource(
+    expectedSha,
+    expectedDigest,
+    beforeBuildDigest,
+  );
 
-  logger({ event: 'deploy-revision-verified', commitSha });
+  logger({
+    event: 'deploy-revision-verified',
+    phase: 'before-build',
+    commitSha,
+    sourceDigest,
+  });
 
-  const exitCode = await runVerify();
+  const exitCode = await runBuild();
   if (exitCode !== 0) {
-    throw new Error(`CloudBase project verification failed with exit code ${exitCode}`);
+    throw new Error(`CloudBase production build failed with exit code ${exitCode}`);
   }
 
-  return { commitSha };
+  const afterBuildDigest = await readSourceDigest();
+  verifyDeploySource(expectedSha, expectedDigest, afterBuildDigest);
+
+  logger({
+    event: 'deploy-revision-verified',
+    phase: 'after-build',
+    commitSha,
+    sourceDigest,
+  });
+
+  return { commitSha, sourceDigest };
 }
 
 const entryUrl = process.argv[1] ? pathToFileURL(resolve(process.argv[1])).href : undefined;

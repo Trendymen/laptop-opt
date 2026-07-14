@@ -15,6 +15,7 @@ import {
 
 const envId = 'env-test-value';
 const commitSha = '0123456789abcdef0123456789abcdef01234567';
+const sourceDigest = 'a'.repeat(64);
 
 const expectedRequest = {
   envId,
@@ -35,7 +36,10 @@ const expectedRequest = {
       deployCmd: 'tcb hosting deploy ./dist /',
     },
     staticEnv: {
-      variables: [{ key: 'EXPECTED_GITHUB_SHA', value: commitSha }],
+      variables: [
+        { key: 'EXPECTED_GITHUB_SHA', value: commitSha },
+        { key: 'EXPECTED_SOURCE_SHA256', value: sourceDigest },
+      ],
     },
   },
 };
@@ -59,7 +63,7 @@ test('deployment uses the narrow pinned Tencent Cloud SDK with the audited uuid 
 });
 
 test('GIT deployment request exactly targets the existing laptop application', () => {
-  const request = createDeploymentRequest({ envId, commitSha });
+  const request = createDeploymentRequest({ envId, commitSha, sourceDigest });
 
   assert.deepEqual(request, expectedRequest);
   const serialized = JSON.stringify(request);
@@ -68,8 +72,15 @@ test('GIT deployment request exactly targets the existing laptop application', (
 
 test('GIT deployment request rejects an invalid commit revision', () => {
   assert.throws(
-    () => createDeploymentRequest({ envId, commitSha: 'master' }),
+    () => createDeploymentRequest({ envId, commitSha: 'master', sourceDigest }),
     /40-character Git commit SHA/,
+  );
+});
+
+test('GIT deployment request rejects an invalid source digest', () => {
+  assert.throws(
+    () => createDeploymentRequest({ envId, commitSha, sourceDigest: 'not-a-digest' }),
+    /64-character SHA-256/,
   );
 });
 
@@ -118,7 +129,10 @@ test('Tencent Cloud adapter sends recursively PascalCased requests to the offici
             DeployCmd: 'tcb hosting deploy ./dist /',
           },
           StaticEnv: {
-            Variables: [{ Key: 'EXPECTED_GITHUB_SHA', Value: commitSha }],
+            Variables: [
+              { Key: 'EXPECTED_GITHUB_SHA', Value: commitSha },
+              { Key: 'EXPECTED_SOURCE_SHA256', Value: sourceDigest },
+            ],
           },
         },
       },
@@ -179,6 +193,7 @@ test('deployment verifies the target, creates one version, and polls its BuildId
     service,
     envId,
     commitSha,
+    sourceDigest,
     logger: (entry) => logs.push(entry),
     sleep: async () => {},
     now: () => 0,
@@ -223,7 +238,7 @@ test('target mismatch prevents createApp from being called', async () => {
   };
 
   await assert.rejects(
-    deployCloudBaseApp({ service, envId, commitSha }),
+    deployCloudBaseApp({ service, envId, commitSha, sourceDigest }),
     /target application mismatch/,
   );
   assert.equal(createCalls, 0);
@@ -323,6 +338,7 @@ test('runFromEnvironment initializes the SDK only after validation and never log
     DEPLOY_COMMIT_SHA: commitSha,
   };
   const initialized = [];
+  const digestInputs = [];
   const logs = [];
   const service = {
     async describeAppInfo() {
@@ -338,6 +354,10 @@ test('runFromEnvironment initializes the SDK only after validation and never log
 
   await runFromEnvironment({
     env: rawEnvironment,
+    readTrackedSourceDigest: async (options) => {
+      digestInputs.push(options);
+      return sourceDigest;
+    },
     createService: async (credentials) => {
       initialized.push(credentials);
       return service;
@@ -348,6 +368,7 @@ test('runFromEnvironment initializes the SDK only after validation and never log
   assert.deepEqual(initialized, [
     { secretId: 'secret-id-value', secretKey: 'secret-key-value', envId },
   ]);
+  assert.deepEqual(digestInputs, [{ expectedCommitSha: commitSha }]);
   const serializedLogs = JSON.stringify(logs);
   for (const value of Object.values(rawEnvironment).slice(0, 3)) {
     assert.doesNotMatch(serializedLogs, new RegExp(value));

@@ -1,75 +1,135 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import {
   runDeployRevisionVerification,
-  verifyDeployRevision,
+  verifyDeploySource,
 } from '../scripts/verify-deploy-revision.mjs';
 
 const expectedSha = '0123456789abcdef0123456789abcdef01234567';
+const expectedDigest = 'a'.repeat(64);
 
-test('deploy revision verification accepts the exact cloned commit', () => {
-  assert.equal(verifyDeployRevision(expectedSha, expectedSha.toUpperCase()), expectedSha);
+test('deploy source verification binds the commit metadata to the exact source digest', () => {
+  assert.deepEqual(
+    verifyDeploySource(expectedSha.toUpperCase(), expectedDigest, expectedDigest.toUpperCase()),
+    { commitSha: expectedSha, sourceDigest: expectedDigest },
+  );
 });
 
-test('deploy revision verification rejects a moved branch revision', () => {
+test('deploy source verification rejects a different workspace snapshot', () => {
   assert.throws(
-    () => verifyDeployRevision(expectedSha, 'fedcba9876543210fedcba9876543210fedcba98'),
-    /revision mismatch/,
+    () => verifyDeploySource(expectedSha, expectedDigest, 'b'.repeat(64)),
+    /source digest mismatch/,
   );
 });
 
 test('deploy revision verification rejects an invalid expected revision', () => {
-  assert.throws(() => verifyDeployRevision('master', expectedSha), /40-character Git commit SHA/);
+  assert.throws(
+    () => verifyDeploySource('master', expectedDigest, expectedDigest),
+    /40-character Git commit SHA/,
+  );
 });
 
-test('verified deployment runs the full project verification without shell composition', async () => {
+test('deploy source verification rejects an invalid expected source digest', () => {
+  assert.throws(
+    () => verifyDeploySource(expectedSha, 'not-a-digest', expectedDigest),
+    /64-character SHA-256/,
+  );
+});
+
+test('CloudBase verifies the source, runs one production build, and rechecks the source', async () => {
   const calls = [];
   const logs = [];
 
   const result = await runDeployRevisionVerification({
-    env: { EXPECTED_GITHUB_SHA: expectedSha },
-    readGitSha: async () => {
-      calls.push('readGitSha');
-      return expectedSha;
+    env: {
+      EXPECTED_GITHUB_SHA: expectedSha,
+      EXPECTED_SOURCE_SHA256: expectedDigest,
     },
-    runVerify: async () => {
-      calls.push('runVerify');
+    readSourceDigest: async () => {
+      calls.push('readSourceDigest');
+      return expectedDigest;
+    },
+    runBuild: async () => {
+      calls.push('runBuild');
       return 0;
     },
     logger: (entry) => logs.push(entry),
   });
 
-  assert.equal(result.commitSha, expectedSha);
-  assert.deepEqual(calls, ['readGitSha', 'runVerify']);
-  assert.deepEqual(logs, [{ event: 'deploy-revision-verified', commitSha: expectedSha }]);
+  assert.deepEqual(result, { commitSha: expectedSha, sourceDigest: expectedDigest });
+  assert.deepEqual(calls, ['readSourceDigest', 'runBuild', 'readSourceDigest']);
+  assert.deepEqual(logs, [
+    {
+      event: 'deploy-revision-verified',
+      phase: 'before-build',
+      commitSha: expectedSha,
+      sourceDigest: expectedDigest,
+    },
+    {
+      event: 'deploy-revision-verified',
+      phase: 'after-build',
+      commitSha: expectedSha,
+      sourceDigest: expectedDigest,
+    },
+  ]);
 });
 
-test('revision mismatch prevents the full verification command', async () => {
-  let verifyCalls = 0;
-
+test('source digest mismatch prevents the production build', async () => {
+  let buildCalls = 0;
   await assert.rejects(
     runDeployRevisionVerification({
-      env: { EXPECTED_GITHUB_SHA: expectedSha },
-      readGitSha: async () => 'fedcba9876543210fedcba9876543210fedcba98',
-      runVerify: async () => {
-        verifyCalls += 1;
+      env: {
+        EXPECTED_GITHUB_SHA: expectedSha,
+        EXPECTED_SOURCE_SHA256: expectedDigest,
+      },
+      readSourceDigest: async () => 'b'.repeat(64),
+      runBuild: async () => {
+        buildCalls += 1;
         return 0;
       },
     }),
-    /revision mismatch/,
+    /source digest mismatch/,
   );
-  assert.equal(verifyCalls, 0);
+  assert.equal(buildCalls, 0);
 });
 
-test('failed project verification makes the cloud build fail', async () => {
+test('CloudBase deployment script builds and validates without recursively running full verify', async () => {
+  const source = await readFile('scripts/verify-deploy-revision.mjs', 'utf8');
+  assert.doesNotMatch(source, /npm(?:\.cmd)?['"],\s*\['run',\s*'verify'/);
+  assert.match(source, /\['run', 'build'\]/);
+  assert.match(source, /scripts\/validate-html\.mjs/);
+});
+
+test('failed production build makes the CloudBase build fail', async () => {
   await assert.rejects(
     runDeployRevisionVerification({
-      env: { EXPECTED_GITHUB_SHA: expectedSha },
-      readGitSha: async () => expectedSha,
-      runVerify: async () => 2,
+      env: {
+        EXPECTED_GITHUB_SHA: expectedSha,
+        EXPECTED_SOURCE_SHA256: expectedDigest,
+      },
+      readSourceDigest: async () => expectedDigest,
+      runBuild: async () => 2,
       logger: () => {},
     }),
-    /project verification failed with exit code 2/,
+    /production build failed with exit code 2/,
+  );
+});
+
+test('a production build that mutates tracked source fails before deployment', async () => {
+  const digests = [expectedDigest, 'b'.repeat(64)];
+
+  await assert.rejects(
+    runDeployRevisionVerification({
+      env: {
+        EXPECTED_GITHUB_SHA: expectedSha,
+        EXPECTED_SOURCE_SHA256: expectedDigest,
+      },
+      readSourceDigest: async () => digests.shift(),
+      runBuild: async () => 0,
+      logger: () => {},
+    }),
+    /source digest mismatch/,
   );
 });
