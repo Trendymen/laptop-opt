@@ -72,28 +72,22 @@ function assertWorkflowContract(workflowSource) {
   assert.equal(steps[3].run, 'npm run verify');
   assert.equal(steps[4].run, 'npm install --global @cloudbase/cli@3.6.1');
   assert.match(steps[5].run, /tcb login --apiKeyId "\$TCB_SECRET_ID" --apiKey "\$TCB_SECRET_KEY"/);
-  const deployRun = steps[6].run;
-  const infoCommand = 'tcb app info laptop --env-id "$TCB_ENV_ID" --json';
-  const deployCommand = 'tcb app deploy laptop';
-  const infoCommandIndex = deployRun.indexOf(infoCommand);
-  const deployCommandIndex = deployRun.indexOf(deployCommand);
-
-  assert.ok(infoCommandIndex >= 0, 'deployment must verify the existing laptop app');
-  assert.ok(
-    deployCommandIndex > infoCommandIndex,
-    'application existence check must run before deployment',
-  );
-  const deployArgs = deployRun.slice(deployCommandIndex);
-  assert.match(deployArgs, /tcb app deploy laptop \\/);
-  assert.match(deployArgs, /--env-id "\$TCB_ENV_ID"/);
-  assert.match(deployArgs, /--framework static/);
-  assert.match(deployArgs, /--install-command ""/);
-  assert.match(deployArgs, /--build-command ""/);
-  assert.match(deployArgs, /--output-dir \.\/dist/);
-  assert.match(deployArgs, /--deploy-path \//);
-  assert.match(deployArgs, /--force/);
-  assert.match(deployArgs, /--yes/);
-  assert.match(deployArgs, /--json/);
+  const expectedDeployRun = [
+    'set -euo pipefail',
+    ': "${TCB_ENV_ID:?TCB_ENV_ID is not configured}"',
+    'tcb app info laptop --env-id "$TCB_ENV_ID" --json',
+    'tcb app deploy laptop \\',
+    '  --env-id "$TCB_ENV_ID" \\',
+    '  --framework static \\',
+    '  --install-command "" \\',
+    '  --build-command "" \\',
+    '  --output-dir ./dist \\',
+    '  --deploy-path / \\',
+    '  --force \\',
+    '  --yes \\',
+    '  --json',
+  ].join('\n');
+  assert.equal(steps[6].run.trimEnd(), expectedDeployRun);
   assert.doesNotMatch(
     workflowSource,
     /pull_request_target|tcb hosting deploy|hosting delete|app delete|\.\/dist \/home|\/Users\/|AKID/,
@@ -155,6 +149,30 @@ test('CloudBase workflow contract rejects deployment without the existing-app ch
 test('CloudBase workflow contract rejects an inferred application name', async () => {
   const workflow = await readFile(workflowPath, 'utf8');
   const mutated = workflow.replace('tcb app deploy laptop \\\n', 'tcb app deploy \\\n');
+
+  assert.notEqual(mutated, workflow);
+  assert.throws(() => assertWorkflowContract(mutated));
+});
+
+test('CloudBase workflow contract rejects a nested deploy path', async () => {
+  const workflow = await readFile(workflowPath, 'utf8');
+  const mutated = workflow.replace('--deploy-path / \\\n', '--deploy-path /laptop \\\n');
+
+  assert.notEqual(mutated, workflow);
+  assert.throws(() => assertWorkflowContract(mutated));
+});
+
+test('CloudBase workflow contract rejects a different output directory', async () => {
+  const workflow = await readFile(workflowPath, 'utf8');
+  const mutated = workflow.replace('--output-dir ./dist \\\n', '--output-dir ./dist-backup \\\n');
+
+  assert.notEqual(mutated, workflow);
+  assert.throws(() => assertWorkflowContract(mutated));
+});
+
+test('CloudBase workflow contract rejects a missing line continuation', async () => {
+  const workflow = await readFile(workflowPath, 'utf8');
+  const mutated = workflow.replace('--framework static \\\n', '--framework static\n');
 
   assert.notEqual(mutated, workflow);
   assert.throws(() => assertWorkflowContract(mutated));
