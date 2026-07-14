@@ -17,7 +17,10 @@ const expectedStepNames = [
 
 function collectSecretExpressionPaths(value, path = [], paths = []) {
   if (typeof value === 'string') {
-    if (/\$\{\{\s*secrets\./.test(value)) paths.push(path.join('.'));
+    const expressions = value.match(/\$\{\{[\s\S]*?\}\}/g) ?? [];
+    if (expressions.some((expression) => /\bsecrets\s*(?:\.|\[)/.test(expression))) {
+      paths.push(path.join('.'));
+    }
     return paths;
   }
 
@@ -33,6 +36,10 @@ function collectSecretExpressionPaths(value, path = [], paths = []) {
   }
 
   return paths;
+}
+
+function normalizeShellCommands(shellSource) {
+  return shellSource.replace(/\\\r?\n[ \t]*/g, ' ').replace(/[ \t]+/g, ' ');
 }
 
 function assertWorkflowContract(workflowSource) {
@@ -88,9 +95,17 @@ function assertWorkflowContract(workflowSource) {
     '  --json',
   ].join('\n');
   assert.equal(steps[6].run.trimEnd(), expectedDeployRun);
+  const normalizedShellCommands = steps
+    .filter((step) => typeof step.run === 'string')
+    .map((step) => normalizeShellCommands(step.run))
+    .join('\n');
+  assert.doesNotMatch(
+    normalizedShellCommands,
+    /(?:^|[\n;&|()]) *tcb (?:hosting (?:deploy|delete)|app delete)(?=$|[ \n;&|()])/m,
+  );
   assert.doesNotMatch(
     workflowSource,
-    /pull_request_target|tcb hosting deploy|hosting delete|app delete|\.\/dist \/home|\/Users\/|AKID/,
+    /pull_request_target|\.\/dist \/home|\/Users\/|AKID/,
   );
 }
 
@@ -126,12 +141,55 @@ test('CloudBase workflow contract rejects job-level deployment secrets', async (
   assert.throws(() => assertWorkflowContract(mutated));
 });
 
+for (const { label, expression } of [
+  { label: 'single-quoted bracket secret access', expression: "${{ secrets['TCB_SECRET_ID'] }}" },
+  { label: 'double-quoted bracket secret access', expression: '${{ secrets["TCB_SECRET_ID"] }}' },
+  { label: 'dynamic bracket secret access', expression: '${{ secrets[github.ref_name] }}' },
+]) {
+  test(`CloudBase workflow contract rejects ${label}`, async () => {
+    const workflow = await readFile(workflowPath, 'utf8');
+    const mutated = workflow.replace(
+      '  group: cloudbase-${{ github.workflow }}-${{ github.ref }}\n',
+      `  group: cloudbase-\${{ github.workflow }}-\${{ github.ref }}-${expression}\n`,
+    );
+
+    assert.notEqual(mutated, workflow);
+    assert.doesNotThrow(() => parse(mutated));
+    assert.throws(() => assertWorkflowContract(mutated));
+  });
+}
+
+for (const { label, command } of [
+  { label: 'multi-whitespace legacy hosting deploy', command: 'tcb  hosting\tdeploy ./dist' },
+  {
+    label: 'line-continuation hosting delete',
+    command: 'tcb \\\nhosting \\\ndelete --env-id "$TCB_ENV_ID"',
+  },
+  {
+    label: 'line-continuation app delete',
+    command: 'tcb \\\napp \\\ndelete laptop --env-id "$TCB_ENV_ID"',
+  },
+]) {
+  test(`CloudBase workflow contract rejects ${label}`, async () => {
+    const workflow = await readFile(workflowPath, 'utf8');
+    const loginCommand = '          tcb login --apiKeyId "$TCB_SECRET_ID" --apiKey "$TCB_SECRET_KEY"\n';
+    const indentedCommand = command
+      .split('\n')
+      .map((line) => `          ${line}`)
+      .join('\n');
+    const mutated = workflow.replace(loginCommand, `${loginCommand}${indentedCommand}\n`);
+
+    assert.notEqual(mutated, workflow);
+    assert.doesNotThrow(() => parse(mutated));
+    assert.throws(() => assertWorkflowContract(mutated));
+  });
+}
+
 test('CloudBase workflow contract rejects an unguarded deploy step', async () => {
   const workflow = await readFile(workflowPath, 'utf8');
-  const guard = "${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/master' }}";
   const mutated = workflow.replace(
-    `      - name: Deploy CloudBase application\n        if: ${guard}\n`,
-    `      - name: Guard-count decoy\n        if: ${guard}\n        run: true\n\n      - name: Deploy CloudBase application\n`,
+    `      - name: Deploy CloudBase application\n        if: ${deployGuard}\n`,
+    '      - name: Deploy CloudBase application\n',
   );
 
   assert.notEqual(mutated, workflow);
