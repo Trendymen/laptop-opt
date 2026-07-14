@@ -13,24 +13,24 @@
   <div class="page-shell">
     <header class="topbar">
       <strong>MECHREVO / USER REFERENCE</strong>
-      <div><span>设备：机械革命蛟龙 16 Pro · Ryzen 9 8945HX · RTX 5070 Ti</span><span>用途：游戏性能与散热平衡</span><b>记录于 2026-07-12 · 当前调校基线已稳定运行</b></div>
+      <div><span>蛟龙 16 Pro · 8945HX · 5070 Ti</span><span>2026-07-12</span><b>作者：刘卓</b></div>
     </header>
 
     <section class="hero" aria-labelledby="page-title">
       <div class="hero-copy" data-reveal>
         <p class="eyebrow">PERFORMANCE TUNING · TUNING GUIDE</p>
         <h1 id="page-title">性能调校<br>参考档案</h1>
-        <p>记录这台电脑已经完成的硬件与软件调整，并为参数回退、启动异常和后续调校保留可复现依据。</p>
+        <p>记录本机已完成的调校，供参数回退、异常恢复和后续调整参考。</p>
       </div>
       <figure class="hero-media"><img src="{{asset:device-hero}}" alt="机械革命蛟龙 16 Pro 配置宣传图"></figure>
       <div class="hero-adjustments">
         <p class="adjustments-label">已完成调整</p>
         <dl class="hero-metrics">
-          <div><dt>CPU 当前状态</dt><dd>5.0 GHz</dd><p>CCD1 已关闭，CPU 睿频已关闭</p></div>
-          <div><dt>UXTU 当前状态</dt><dd>-20</dd><p>UXTU 全核负压 -20</p></div>
-          <div><dt>显卡当前状态</dt><dd>独显直连</dd><p>显卡保持独显直连</p></div>
-          <div><dt>内存通道</dt><dd>16GB × 2</dd><p>原装 32GB 英睿达镁光单条已更换为十铨 16GB × 2（海力士 M-die）双内存条，组成 32GB 双通道。</p></div>
-          <div class="hero-metric--memory"><dt>内存超频与时序</dt><dd>5600 MT/s · C36</dd><p>默认 5200 MT/s / C42 → 当前 5600 MT/s / C36；内存超频和时序收紧已完成，并稳定运行。</p></div>
+          <div><dt>CPU 当前状态</dt><dd>5.0 GHz</dd><p>CCD1 已关闭：16 核 32 线程 → 8 核 16 线程；可用 L3 64MB → 32MB。减少跨 CCD 调度和发热，代价是多核性能下降；CPU 睿频已关闭。</p></div>
+          <div><dt>UXTU 当前状态</dt><dd>-20</dd><p>全核负压 -20</p></div>
+          <div><dt>显卡当前状态</dt><dd>独显直连</dd><p>不经过核显输出。</p></div>
+          <div><dt>内存通道</dt><dd>16GB × 2</dd><p>英睿达镁光 32GB 单条 → 十铨 16GB × 2（海力士 M-die）双通道。</p></div>
+          <div class="hero-metric--memory"><dt>内存超频与时序</dt><dd>5600 MT/s · C36</dd><p>默认 5200 C42 → 当前 5600 C36，已稳定运行。</p></div>
         </dl>
       </div>
     </section>

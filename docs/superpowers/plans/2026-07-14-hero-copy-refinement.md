@@ -60,7 +60,7 @@
   );
   assert.match(
     heroMetrics,
-    /<div><dt>显卡当前状态<\/dt><dd>独显直连<\/dd><p>独显直连<\/p><\/div>/,
+    /<div><dt>显卡当前状态<\/dt><dd>独显直连<\/dd><p>不经过核显输出。<\/p><\/div>/,
   );
   assert.match(
     heroMetrics,
@@ -99,7 +99,7 @@
   ```html
   <div><dt>CPU 当前状态</dt><dd>5.0 GHz</dd><p>CCD1 已关闭：16 核 32 线程 → 8 核 16 线程；可用 L3 64MB → 32MB。减少跨 CCD 调度和发热，代价是多核性能下降；CPU 睿频已关闭。</p></div>
   <div><dt>UXTU 当前状态</dt><dd>-20</dd><p>全核负压 -20</p></div>
-  <div><dt>显卡当前状态</dt><dd>独显直连</dd><p>独显直连</p></div>
+  <div><dt>显卡当前状态</dt><dd>独显直连</dd><p>不经过核显输出。</p></div>
   <div><dt>内存通道</dt><dd>16GB × 2</dd><p>英睿达镁光 32GB 单条 → 十铨 16GB × 2（海力士 M-die）双通道。</p></div>
   <div class="hero-metric--memory"><dt>内存超频与时序</dt><dd>5600 MT/s · C36</dd><p>默认 5200 C42 → 当前 5600 C36，已稳定运行。</p></div>
   ```

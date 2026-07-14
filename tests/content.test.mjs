@@ -23,6 +23,13 @@ function assertInOrder(source, markers) {
 
 test('source prioritizes completed adjustments, actions, tools, evidence and memory appendix', async () => {
   const template = await readFile('src/index.template.html', 'utf8');
+  const topbar = template.match(/<header class="topbar">([\s\S]*?)<\/header>/)?.[1];
+  assert.ok(topbar, 'missing topbar');
+  assert.match(
+    topbar,
+    /<div><span>蛟龙 16 Pro · 8945HX · 5070 Ti<\/span><span>2026-07-12<\/span><b>作者：刘卓<\/b><\/div>/,
+  );
+  assert.doesNotMatch(topbar, /设备：|用途：|当前调校基线已稳定运行|Ryzen 9|RTX /);
   const heroStart = template.indexOf('<section class="hero"');
   const heroEnd = template.indexOf('</section>', heroStart);
   const heroSource = template.slice(heroStart, heroEnd);
@@ -38,25 +45,41 @@ test('source prioritizes completed adjustments, actions, tools, evidence and mem
     'Hero must contain exactly one merged memory tuning card',
   );
   assert.match(
-    heroMetrics,
-    /<div class="hero-metric--memory"><dt>内存超频与时序<\/dt><dd>5600 MT\/s · C36<\/dd><p>默认 5200 MT\/s \/ C42 → 当前 5600 MT\/s \/ C36；内存超频和时序收紧已完成，并稳定运行。<\/p><\/div>/,
+    heroSource,
+    /<p>记录本机已完成的调校，供参数回退、异常恢复和后续调整参考。<\/p>/,
   );
   assert.match(
     heroMetrics,
-    /<div><dt>内存通道<\/dt><dd>16GB × 2<\/dd><p>原装 32GB 英睿达镁光单条已更换为十铨 16GB × 2（海力士 M-die）双内存条，组成 32GB 双通道。<\/p><\/div>/,
+    /<div><dt>CPU 当前状态<\/dt><dd>5\.0 GHz<\/dd><p>CCD1 已关闭：16 核 32 线程 → 8 核 16 线程；可用 L3 64MB → 32MB。减少跨 CCD 调度和发热，代价是多核性能下降；CPU 睿频已关闭。<\/p><\/div>/,
+  );
+  assert.match(
+    heroMetrics,
+    /<div><dt>UXTU 当前状态<\/dt><dd>-20<\/dd><p>全核负压 -20<\/p><\/div>/,
+  );
+  assert.match(
+    heroMetrics,
+    /<div><dt>显卡当前状态<\/dt><dd>独显直连<\/dd><p>不经过核显输出。<\/p><\/div>/,
+  );
+  assert.match(
+    heroMetrics,
+    /<div><dt>内存通道<\/dt><dd>16GB × 2<\/dd><p>英睿达镁光 32GB 单条 → 十铨 16GB × 2（海力士 M-die）双通道。<\/p><\/div>/,
+  );
+  assert.match(
+    heroMetrics,
+    /<div class="hero-metric--memory"><dt>内存超频与时序<\/dt><dd>5600 MT\/s · C36<\/dd><p>默认 5200 C42 → 当前 5600 C36，已稳定运行。<\/p><\/div>/,
   );
 
   for (const phrase of [
     '已完成调整',
-    'CCD1 已关闭',
-    'CPU 睿频已关闭',
+    '记录本机已完成的调校，供参数回退、异常恢复和后续调整参考。',
+    'CCD1 已关闭：16 核 32 线程 → 8 核 16 线程；可用 L3 64MB → 32MB。减少跨 CCD 调度和发热，代价是多核性能下降；CPU 睿频已关闭。',
     '5.0 GHz',
-    'UXTU 全核负压 -20',
-    '显卡保持独显直连',
-    '原装 32GB 英睿达镁光单条已更换为十铨 16GB × 2（海力士 M-die）双内存条，组成 32GB 双通道。',
+    '全核负压 -20',
+    '不经过核显输出。',
+    '英睿达镁光 32GB 单条 → 十铨 16GB × 2（海力士 M-die）双通道。',
     '内存超频与时序',
     '5600 MT/s · C36',
-    '默认 5200 MT/s / C42 → 当前 5600 MT/s / C36；内存超频和时序收紧已完成，并稳定运行。',
+    '默认 5200 C42 → 当前 5600 C36，已稳定运行。',
   ]) {
     assert.ok(heroText.includes(phrase), `missing hero adjustment: ${phrase}`);
   }
@@ -309,7 +332,7 @@ test('rendered copy matches the approved device handoff facts', async () => {
   const html = await readFile(outputPath, 'utf8');
   const text = visibleText(html);
   const required = [
-    '机械革命蛟龙 16 Pro', 'Ryzen 9 8945HX', 'RTX 5070 Ti', '游戏性能与散热平衡',
+    '蛟龙 16 Pro', '8945HX', '5070 Ti', '2026-07-12', '作者：刘卓',
     'CCD1 已关闭', 'CPU 睿频已关闭', '接通电源 5000 MHz',
     'SPL 65W', 'sPPT 85W', 'fPPT 85W', '控制极限 CPU 温度',
     '独显直连', '高性能电源模式保持关闭', 'All Core Offset -20',
@@ -325,7 +348,7 @@ test('rendered copy matches the approved device handoff facts', async () => {
     'MCHOSE HUB', '小飞机（MSI Afterburner）', 'HWiNFO 仅传感器模式',
     'AIDA64', 'TM5', '先询问 AI 再使用',
     'UXTU（Universal x86 Tuning Utility）',
-    '性能调校参考档案', '当前调校基线已稳定运行',
+    '性能调校参考档案',
     '已完成调整', '内存超频已完成', '内存时序已调整并稳定运行',
     '当前关键设置、截图与教程', '异常恢复', '内存超频与时序记录',
     'REFERENCE RULE / 使用原则',
