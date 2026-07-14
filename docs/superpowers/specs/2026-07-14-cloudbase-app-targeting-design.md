@@ -14,19 +14,21 @@ tcb hosting deploy ./dist -e "$TCB_ENV_ID"
 
 CloudBase 官方的应用部署模型使用 `tcb app deploy [serviceName]`：`serviceName` 对应具体应用，部署会生成版本记录并更新应用状态。官方 CLI 帮助也明确区分：`app deploy` 支持版本管理，`hosting deploy` 仅做文件上传。
 
+首次切换到 `app deploy` 后还暴露出第二个问题：CLI 3.6.1 会把当前工作目录整体压缩上传，只默认忽略 `.git`、`node_modules` 和 `.DS_Store`。如果命令从仓库根目录执行，已经完成本地构建仍会把 `.cache`、`output`、`.superpowers`、源码和 `dist` 一起打包；当前仓库这些非必要内容未压缩前约百 MB，导致 Actions 在创建新应用版本前长时间停留在上传阶段。CLI 3.6.1 还没有把 `--cwd` 解析出的 `projectPath` 传给上传函数，因此仅追加 `--cwd ./dist` 不能收窄压缩范围。应用部署必须让进程本身从 `dist/` 内执行，确保上传输入只有已验证产物。
+
 ## 目标
 
 - GitHub Actions 显式更新现有应用 `laptop`，不再只更新底层静态文件。
 - 保持目标云开发环境不变，继续由 `TCB_ENV_ID` 选择环境。
 - 保持应用路径 `/` 不变，线上访问地址不迁移。
-- 复用 `npm run verify` 已生成的 `dist/`，避免在 CloudBase 中重复安装依赖或构建。
+- 复用 `npm run verify` 已生成的 `dist/`，并且只上传该目录，避免上传缓存、截图中间产物、源码或在 CloudBase 中重复安装依赖与构建。
 - 保留现有 Secrets 隔离、PR 只验证、`master` 才部署和最小权限策略。
 
 ## 方案选择
 
 ### 采用：GitHub Actions 显式执行应用部署
 
-先用只读命令确认目标应用已经存在，再执行部署：
+部署步骤的工作目录固定为 `dist/`。先用只读命令确认目标应用已经存在，再执行部署：
 
 ```bash
 tcb app info laptop --env-id "$TCB_ENV_ID" --json
@@ -36,7 +38,7 @@ tcb app deploy laptop \
   --framework static \
   --install-command "" \
   --build-command "" \
-  --output-dir ./dist \
+  --output-dir ./ \
   --deploy-path / \
   --force \
   --yes \
@@ -49,8 +51,9 @@ tcb app deploy laptop \
 - `laptop`：显式绑定控制台现有应用，避免从 `package.json` 的 `laptop-performance-handoff` 自动推断出错误名称。
 - `--env-id`：选择现有云开发环境。
 - `--framework static`：声明这是纯静态应用。
+- `working-directory: dist`：让 CLI 的压缩根目录直接落在已验证产物目录，只上传部署所需文件；不使用 `--cwd ./dist`，避免 CLI 同时把该值写入云端 `buildPath`。
 - 空安装和构建命令：跳过 CloudBase 侧重复安装与构建，直接使用 Actions 已验证的产物。
-- `--output-dir ./dist`：上传 `npm run verify` 生成的目录。
+- `--output-dir ./`：部署当前工作目录中的产物；此时 `index.html` 就在输出目录根部。
 - `--deploy-path /`：继续挂载到当前根路径。
 - `--force --yes`：更新已有应用并禁止 CI 等待交互确认。
 - `--json`：提供适合 Actions 日志和后续自动检查的结构化结果。
@@ -69,9 +72,11 @@ tcb app deploy laptop \
 
 1. `.github/workflows/deploy-cloudbase.yml`
    - 部署步骤改名为应用级部署。
+   - 部署步骤使用 `working-directory: dist`，将上传边界收窄到构建产物。
    - 先确认 `laptop` 已存在，再用上述 `tcb app deploy laptop` 命令替换 `tcb hosting deploy`。
 2. `tests/deploy-workflow.test.mjs`
-   - 契约测试必须要求应用存在性检查、显式应用名 `laptop`、路径 `/`、预构建 `dist/`、非交互参数和应用部署命令。
+   - 契约测试必须要求应用存在性检查、显式应用名 `laptop`、路径 `/`、步骤工作目录 `dist`、输出目录 `./`、非交互参数和应用部署命令。
+   - 契约测试必须拒绝删除 `working-directory`、退回仓库根目录的 `./dist` 输出或改用 `--cwd`。
    - 契约测试必须拒绝重新出现 `tcb hosting deploy`。
    - 继续验证 Secrets 只存在于登录与部署步骤、部署 guard、固定 CLI 版本和禁止危险删除。
 
@@ -96,6 +101,7 @@ tcb app deploy laptop \
 - 不执行 `hosting delete` 或 `app delete`。
 - 不创建第二个应用；`app info laptop` 必须先成功，再由固定 `serviceName=laptop` 和 `--force` 更新现有应用。
 - 不改变 `TCB_ENV_ID`、根路径 `/` 或公网域名。
+- 不从仓库根目录执行 `app deploy`；部署输入严格限制为 `dist/`，避免无关缓存和中间产物拖慢或污染应用版本。
 - 如果应用部署失败，Actions 会失败并保留当前成功版本；不会在测试失败后继续部署。
 
 ## 参考

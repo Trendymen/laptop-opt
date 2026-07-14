@@ -138,7 +138,7 @@ npm run verify
 git diff --check
 ```
 
-Expected: workflow 聚焦测试全部 PASS；完整测试 44/44 PASS；构建输出 `dist/index.html`；standalone validator 通过；`git diff --check` 无输出。
+Expected: workflow 聚焦测试全部 PASS；完整测试 53/53 PASS；构建输出 `dist/index.html`；standalone validator 通过；`git diff --check` 无输出。
 
 如果 `npm run verify` 只改写了生成产物而内容未变，确认后执行：
 
@@ -241,3 +241,105 @@ Expected:
 - `JOB_ID="$(gh run view "$RUN_ID" --repo Trendymen/laptop-opt --json jobs --jq '.jobs[0].databaseId')"` 后，`gh api "repos/Trendymen/laptop-opt/check-runs/$JOB_ID/annotations"` 返回 `[]`；
 - `git fetch origin && git rev-list --left-right --count origin/master...HEAD` 返回 `0 0`；
 - `git status --short --branch` 为 clean。
+
+---
+
+### Task 3: 将应用部署输入收窄到 `dist/`
+
+**Files:**
+- Modify: `tests/deploy-workflow.test.mjs`
+- Modify: `.github/workflows/deploy-cloudbase.yml`
+
+**Root cause:** CloudBase CLI 3.6.1 的 `app deploy` 会压缩当前工作目录，只默认忽略 `.git`、`node_modules` 和 `.DS_Store`。从仓库根目录运行会额外上传 `.cache`、`output`、`.superpowers`、源码与其他无关内容；当前未压缩输入约百 MB，应用版本创建前的上传因此超过十分钟。
+
+- [ ] **Step 1: 先收紧 workflow 契约测试并确认 RED**
+
+在 `assertWorkflowContract` 的部署步骤环境断言后加入：
+
+```js
+  assert.equal(steps[6]['working-directory'], 'dist');
+```
+
+把 `expectedDeployRun` 中的输出目录改为当前目录，并拒绝 `--cwd`：
+
+```js
+    '  --output-dir ./ \\',
+
+  assert.doesNotMatch(steps[6].run, /(?:^|\s)--cwd(?:\s|$)/m);
+```
+
+增加三个 mutation tests：
+
+```js
+test('CloudBase workflow contract rejects deployment from the repository root', async () => {
+  const workflow = await readFile(workflowPath, 'utf8');
+  const mutated = workflow.replace('        working-directory: dist\n', '');
+
+  assert.notEqual(mutated, workflow);
+  assert.throws(() => assertWorkflowContract(mutated));
+});
+
+test('CloudBase workflow contract rejects the repository-root output path', async () => {
+  const workflow = await readFile(workflowPath, 'utf8');
+  const mutated = workflow.replace('--output-dir ./ \\\n', '--output-dir ./dist \\\n');
+
+  assert.notEqual(mutated, workflow);
+  assert.throws(() => assertWorkflowContract(mutated));
+});
+
+test('CloudBase workflow contract rejects the ineffective cwd option', async () => {
+  const workflow = await readFile(workflowPath, 'utf8');
+  const mutated = workflow.replace(
+    '            --output-dir ./ \\\n',
+    '            --cwd ./dist \\\n            --output-dir ./ \\\n',
+  );
+
+  assert.notEqual(mutated, workflow);
+  assert.throws(() => assertWorkflowContract(mutated));
+});
+```
+
+Run:
+
+```bash
+node --test tests/deploy-workflow.test.mjs
+```
+
+Expected: FAIL；当前 workflow 仍从仓库根目录执行并使用 `--output-dir ./dist`。
+
+- [ ] **Step 2: 最小修改部署步骤并确认 GREEN**
+
+在 `Deploy CloudBase application` 步骤添加工作目录：
+
+```yaml
+        working-directory: dist
+```
+
+再把部署参数改为：
+
+```bash
+--output-dir ./
+```
+
+应用名 `laptop`、环境、存在性保护、根路径 `/`、空 install/build、`--force --yes --json` 均保持不变。
+
+Run:
+
+```bash
+node --test tests/deploy-workflow.test.mjs
+npm run verify
+git diff --check
+```
+
+Expected: 聚焦测试和完整验证通过，构建产物仍为 `dist/index.html`。
+
+- [ ] **Step 3: Review、提交、推送并核验最终部署**
+
+独立 reviewer 必须确认：
+
+- CLI 的实际压缩根目录是 `dist/`；
+- 没有 `--cwd` / `buildPath` 歧义；
+- 仍更新现有 `laptop` 应用与 `/` 路径；
+- Secrets、PR guard 和禁止删除契约未弱化。
+
+推送后等待同一 HEAD 的 Actions 结束，再执行 Task 2 的应用版本、线上 SHA-256、日志泄密与 Git 同步核验。
